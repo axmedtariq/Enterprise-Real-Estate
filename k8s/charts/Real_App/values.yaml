@@ -1,0 +1,17 @@
+# sovereign-app/values.yaml
+replicaCount: 3
+
+images:
+  backend: "your-docker-id/sovereign-backend:latest"
+  frontend: "your-docker-id/sovereign-frontend:latest"
+  pullPolicy: IfNotPresent
+
+service:
+  backendPort: 5000
+  frontendPort: 80
+
+# High-Net-Worth Security
+secrets:
+  jwtSecret: "ELITE_JWT_PRODUCTION_KEY"
+  cloudinaryUrl: "cloudinary://api_key:api_secret@cloud_name"
+  mongoUri: "mongodb+srv://admin:password@sovereign-cluster.mongodb.net"

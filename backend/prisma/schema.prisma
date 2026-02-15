@@ -1,0 +1,66 @@
+// 💎 SOVEREIGN DATA SCHEMA
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id          String   @id @default(uuid())
+  title       String
+  price       Float
+  address     String
+  lat         Float
+  lng         Float
+  description String?  @db.Text
+  has3D       Boolean  @default(false)
+  category    String   @default("buy") // 'buy' or 'rent'
+  isVIP       Boolean  @default(false)
+  videoUrl    String?  // Short-form video URL (TikTok/Reels style)
+  companyId   String   @default("SOVEREIGN_GLOBAL")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  images      Image[]
+  bookings    Booking[]
+  reviews     Review[]
+  amenities   String   @default("[]") // JSON string of amenities
+  maxGuests   Int      @default(2)
+
+  @@index([price])
+  @@index([companyId])
+}
+
+model Image {
+  id         String   @id @default(uuid())
+  publicId   String
+  url        String
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  startDate   DateTime
+  endDate     DateTime
+  totalPrice  Float
+  status      String   @default("pending") // pending, confirmed, cancelled
+  guestId     String   // User ID (mocked for now)
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  rating      Int
+  comment     String
+  userId      String
+  userName    String
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}

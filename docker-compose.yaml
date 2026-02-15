@@ -1,0 +1,76 @@
+version: '3.9'
+
+services:
+  # 🏦 THE DATA VAULT
+  # 🗄️ THE VAULT (SQL SERVER)
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sovereign_db
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${DB_PASSWORD:-Sovereign_Secret_123!}
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - sovereign_network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # ⚙️ THE CORE INTELLIGENCE (BACKEND)
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sovereign_api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=sqlserver://sqlserver:1433;database=elite_estate;user=sa;password=${DB_PASSWORD:-Sovereign_Secret_123!};encrypt=true;trustServerCertificate=true;
+      - JWT_SECRET=${JWT_SECRET}
+      - CLOUDINARY_URL=${CLOUDINARY_URL}
+    depends_on:
+      sqlserver:
+        condition: service_started
+    networks:
+      - sovereign_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 🏛️ THE ELITE TERMINAL (FRONTEND)
+  frontend:
+    build:
+      context: ./frontend-next
+      dockerfile: Dockerfile
+    container_name: sovereign_ui
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    networks:
+      - sovereign_network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1G
+
+networks:
+  sovereign_network:
+    driver: bridge
+
+volumes:
+  sql-data:
+    driver: local

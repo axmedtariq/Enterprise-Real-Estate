@@ -1,0 +1,7 @@
+# sovereign-app/Chart.yaml
+apiVersion: v2
+name: sovereign-app
+description: Institutional Grade Real Estate Platform
+type: application
+version: 1.0.0
+appVersion: "2026.01"

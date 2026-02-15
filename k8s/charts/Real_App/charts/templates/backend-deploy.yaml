@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sovereign.fullname" . }}-backend
+  labels:
+    {{- include "sovereign.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      annotations:
+        # 📈 PROMETHEUS MONITORING (Aligned with your /metrics endpoint)
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.backend.port }}"
+        prometheus.io/path: "/metrics"
+        
+        # 🛡️ VAULT SIDECAR INJECTION (Aligned with your /vault/secrets/config logic)
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "elite-estate-role"
+        vault.hashicorp.com/agent-inject-secret-config: "secret/data/production/backend"
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: {{ .Values.backend.image }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+          
+          # 💎 ENV INJECTION: ConfigMap + Secrets
+          envFrom:
+            - configMapRef:
+                name: {{ include "sovereign.fullname" . }}-config
+            - secretRef:
+                name: sovereign-secrets
+
+          # 🛡️ RESILIENCE PROTOCOLS (Aligned with your /health and /ready routes)
+          livenessProbe:
+            httpGet:
+              path: /health # Checks if the engine is alive
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /ready # Checks if MongoDB is actually connected
+              port: {{ .Values.backend.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          # 🚀 RESOURCE GUARANTEES (For 1.5M View Stability)
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
