@@ -21,7 +21,7 @@ echo "Writing Secrets to Vault..."
 
 curl --header "X-Vault-Token: sovereign-root-token" ^
      --request POST ^
-     --data "{\"data\": {\"JWT_SECRET\": \"LUXURY_ESTATE_ELITE_SaaS_2026_SECURE_TOKEN\", \"DATABASE_URL\": \"sqlserver://sovereign_db:1433;database=RealEstateDB;user=sa;password=Password123!;encrypt=true;trustServerCertificate=true;\", \"CLOUDINARY_CLOUD_NAME\": \"your_name\", \"CLOUDINARY_API_KEY\": \"your_key\", \"CLOUDINARY_API_SECRET\": \"your_secret\", \"MONGO_URI\": \"mongodb://127.0.0.1:27017/luxury_estate\"}}" ^
+     --data "{\"data\": {\"JWT_SECRET\": \"<YOUR_SECURE_JWT_SECRET>\", \"DATABASE_URL\": \"sqlserver://sovereign_db:1433;database=RealEstateDB;user=sa;password=<YOUR_SECURE_PASSWORD>;encrypt=true;trustServerCertificate=true;\", \"CLOUDINARY_CLOUD_NAME\": \"<YOUR_CLOUD_NAME>\", \"CLOUDINARY_API_KEY\": \"<YOUR_API_KEY>\", \"CLOUDINARY_API_SECRET\": \"<YOUR_API_SECRET>\", \"MONGO_URI\": \"mongodb://127.0.0.1:27017/luxury_estate\"}}" ^
      http://localhost:8200/v1/secret/data/sovereign-estate
 
 # Instructions for User
