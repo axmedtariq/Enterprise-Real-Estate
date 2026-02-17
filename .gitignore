@@ -32,3 +32,12 @@ docker-compose.override.yml
 
 # Scripts with Secrets
 Scripts/setup-vault.bat
+
+# Vault Data & Secrets
+vault/data/
+certs/
+*.pem
+*.key
+*.csr
+*.srl
+backend-policy.hcl

@@ -28,9 +28,14 @@ services:
     container_name: sovereign_vault
     ports:
       - "8200:8200"
+    volumes:
+      - ./vault/config:/vault/config:rw
+      - ./vault/data:/vault/data:rw
+      - ./certs:/vault/config/certs:ro
     environment:
-      VAULT_DEV_ROOT_TOKEN_ID: sovereign-root-token
-      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_ADDR: 'https://127.0.0.1:8200'
+      VAULT_CACERT: '/vault/config/certs/ca.pem'
+    command: server -config=/vault/config/vault.hcl
     networks:
       - sovereign_network
     cap_add:
@@ -42,7 +47,7 @@ services:
 
   # ⚙️ THE CORE INTELLIGENCE (BACKEND)
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: sovereign_api
@@ -52,15 +57,21 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=sqlserver://sqlserver:1433;database=elite_estate;user=sa;password=${DB_PASSWORD:-Sovereign_Secret_123!};encrypt=true;trustServerCertificate=true;
-      - JWT_SECRET=${JWT_SECRET}
       - CLOUDINARY_URL=${CLOUDINARY_URL}
+      - VAULT_ADDR=https://sovereign_vault:8200
+      - VAULT_CACERT=/app/certs/ca.pem
+      # Remove VAULT_TOKEN for production; use AppRole or similar (initscript logic)
+    volumes:
+      - ./certs:/app/certs:ro
     depends_on:
       sqlserver:
+        condition: service_started
+      vault:
         condition: service_started
     networks:
       - sovereign_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
