@@ -4,6 +4,7 @@ import { connectDatabase } from './data/database';
 
 // Import Routes
 import propertyRoutes from './routes/propertyRoutes';
+import authRoutes from './routes/authRoutes';
 
 const app = express();
 
@@ -17,6 +18,8 @@ connectDatabase();
 
 // 🚦 ROUTES
 app.use('/api/v1', propertyRoutes);
+app.use('/api/v1/auth', authRoutes);
+
 
 // Health Check
 app.get('/health', (req, res) => {
