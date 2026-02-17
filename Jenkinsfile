@@ -38,21 +38,37 @@ pipeline {
         }
 
         stage('🛡️ Container Scanning') {
+            agent {
+                docker {
+                    image 'aquasec/trivy:latest'
+                    args '--entrypoint=""'
+                }
+            }
             steps {
-                // Optional: Integrate Trivy or Snyk here for container security
-                echo "Scanning container images for vulnerabilities..."
+                script {
+                    // Scan Backend Image
+                    sh "trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress ${DOCKER_HUB_USER}/${APP_NAME}-backend:${BUILD_TAG}"
+                    
+                    // Scan Frontend Image
+                    sh "trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress ${DOCKER_HUB_USER}/${APP_NAME}-frontend:${BUILD_TAG}"
+                }
             }
         }
 
         stage('📦 Push to Elite Registry') {
             steps {
                 script {
-                    sh "echo $DOCKER_HUB_PSW | docker login -u $DOCKER_HUB_USR --password-stdin"
-                    
-                    // Push specific build tag and latest for redundancy
-                    sh "docker push ${DOCKER_HUB_USER}/${APP_NAME}-backend:${BUILD_TAG}"
-                    sh "docker tag ${DOCKER_HUB_USER}/${APP_NAME}-backend:${BUILD_TAG} ${DOCKER_HUB_USER}/${APP_NAME}-backend:latest"
-                    sh "docker push ${DOCKER_HUB_USER}/${APP_NAME}-backend:latest"
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                        
+                        // Push specific build tag and latest for redundancy
+                        sh "docker push ${DOCKER_HUB_USER}/${APP_NAME}-backend:${BUILD_TAG}"
+                        sh "docker tag ${DOCKER_HUB_USER}/${APP_NAME}-backend:${BUILD_TAG} ${DOCKER_HUB_USER}/${APP_NAME}-backend:latest"
+                        sh "docker push ${DOCKER_HUB_USER}/${APP_NAME}-backend:latest"
+
+                        // Push Frontend (Assumed based on build step)
+                        sh "docker push ${DOCKER_HUB_USER}/${APP_NAME}-frontend:${BUILD_TAG}"
+                    }
                 }
             }
         }
