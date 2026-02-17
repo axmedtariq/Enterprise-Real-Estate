@@ -29,7 +29,9 @@ COPY --from=builder /app/dist ./dist
 # COPY --from=builder /app/public ./public 
 
 # Install only production dependencies (no dev-tools, no vulnerabilities)
-RUN npm install --omit=dev && \
+# ca-certificates for trusting DB and external APIs
+RUN apk add --no-cache ca-certificates && \
+    npm install --omit=dev && \
     chown -R sovereign:sovereign /app
 
 # Security: Run as non-privileged user
