@@ -19,17 +19,21 @@ WORKDIR /app
 # Set Sovereign Environment
 ENV NODE_ENV=production
 
+# Security: Create a dedicated non-privileged user and group
+RUN addgroup -S sovereign && adduser -S sovereign -G sovereign
+
 # Only bring over the essentials for the 1.5M network
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/dist ./dist
 # If you have static assets or templates
-COPY --from=builder /app/public ./public 
+# COPY --from=builder /app/public ./public 
 
 # Install only production dependencies (no dev-tools, no vulnerabilities)
-RUN npm install --omit=dev
+RUN npm install --omit=dev && \
+    chown -R sovereign:sovereign /app
 
 # Security: Run as non-privileged user
-USER node
+USER sovereign
 
 EXPOSE 5000
 
