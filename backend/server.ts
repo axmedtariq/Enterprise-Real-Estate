@@ -24,8 +24,17 @@ io.on("connection", (socket: Socket) => {
   });
 });
 
+import { initializeVault } from './utils/vault';
+
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`🚀 Elite Enterprise Engine running on port ${PORT}`);
-});
+const startServer = async () => {
+  // 🔐 SECURE BOOT SEQUENCE
+  await initializeVault();
+
+  server.listen(PORT, () => {
+    console.log(`🚀 Elite Enterprise Engine running on port ${PORT}`);
+  });
+};
+
+startServer();
