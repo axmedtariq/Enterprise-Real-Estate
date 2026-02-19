@@ -11,8 +11,10 @@ const router = express.Router();
 router.get('/properties', getAdvancedProperties);
 router.get('/property/:id', getPropertyDetails);
 
+import { protect, authorize } from '../middlewares/authMiddleware';
+
 // Admin Routes (To be protected with middleware)
-router.post('/admin/property/new', createProperty);
+router.post('/admin/property/new', protect, authorize('ADMIN'), createProperty);
 
 // Booking Routes
 import { createBooking, getPropertyBookings } from '../controllers/bookingController';

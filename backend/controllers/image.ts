@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import cloudinary from "cloudinary";
-import catchAsyncErrors from "../middleware/catchAsyncErrors";
-import ErrorHandler from "../utils/errorHandler";
 
 // Ensure cloudinary v2
 const cloudinaryV2 = cloudinary.v2;
@@ -17,12 +15,13 @@ interface UploadPropertyImagesRequest extends Request {
   };
 }
 
-export const uploadPropertyImages = catchAsyncErrors(
-  async (req: UploadPropertyImagesRequest, res: Response, next: NextFunction) => {
+export const uploadPropertyImages = async (req: UploadPropertyImagesRequest, res: Response, next: NextFunction) => {
+  try {
     let images = req.body.images;
 
     if (!images || (Array.isArray(images) && images.length === 0)) {
-      return next(new ErrorHandler("No visual assets provided for upload", 400));
+      res.status(400).json({ success: false, message: "No visual assets provided for upload" });
+      return;
     }
 
     // Ensure we are working with an array
@@ -61,5 +60,8 @@ export const uploadPropertyImages = catchAsyncErrors(
       images: imagesLinks,
       network_status: "Global CDN Synchronized",
     });
+  } catch (error) {
+    console.error("Upload error:", error);
+    res.status(500).json({ success: false, message: "Image Upload Failed" });
   }
-);
+};

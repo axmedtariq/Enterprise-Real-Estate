@@ -1,7 +1,9 @@
-# Environment
+# Environment & Local Configuration
 .env
 .env.local
 .env.production
+.env.development
+.env.test
 
 # Dependencies
 node_modules/
@@ -11,7 +13,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Next.js
+# Next.js Build Artifacts
 .next/
 out/
 build/
@@ -20,8 +22,9 @@ dist/
 # OS Files
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# IDE Files
+# IDE & Editor Files
 .idea
 .vscode
 *.swp
@@ -30,14 +33,36 @@ Thumbs.db
 # Docker
 docker-compose.override.yml
 
-# Scripts with Secrets
-Scripts/setup-vault.bat
+# Terraform (Infrastructure State)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
 
-# Vault Data & Secrets
+# Vault & Sensitive Data
 vault/data/
+vault/vault-keys.json
+vault-update-summary.json
+backend-policy.hcl
+
+# Scripts containing Secrets
+Scripts/setup-vault.bat
+Scripts/init-prod-vault.bat
+Scripts/generate-certs.bat
+
+# Certificates & Keys
 certs/
 *.pem
 *.key
 *.csr
 *.srl
-backend-policy.hcl
+*.crt
+*.pfx
+
+# Logs
+*.log
+logs/
+backend/*.log
+
+# Ansible
+*.retry

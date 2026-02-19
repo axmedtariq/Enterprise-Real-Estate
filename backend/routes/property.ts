@@ -2,16 +2,16 @@ import express from 'express';
 const router = express.Router();
 
 // Import Sovereign Controllers
-import { 
-  getAdvancedProperties, 
+import {
+  getAdvancedProperties,
   getPropertyDetails,
-  createProperty 
+  createProperty
 } from '../controllers/propertyController';
 
-import { uploadPropertyImages } from '../controllers/imageController';
+import { uploadPropertyImages } from '../controllers/image';
 
 // Import Security Middleware
-import { isAuthenticatedUser, authorizeRoles } from '../middleware/auth';
+import { protect, authorize } from '../middlewares/authMiddleware';
 
 /**
  * @section PUBLIC TERMINAL
@@ -28,11 +28,11 @@ router.route('/property/:id').get(getPropertyDetails);
 // 1. Separate Media Processing (Optimization)
 // Upload images first to get Cloudinary URLs
 router.route('/admin/assets/upload')
-  .post(isAuthenticatedUser, authorizeRoles('admin'), uploadPropertyImages);
+  .post(protect, authorize('ADMIN'), uploadPropertyImages);
 
 // 2. Asset Registration
 // Create the final property document with the URLs
 router.route('/admin/property/new')
-  .post(isAuthenticatedUser, authorizeRoles('admin'), createProperty);
+  .post(protect, authorize('ADMIN'), createProperty);
 
 export default router;

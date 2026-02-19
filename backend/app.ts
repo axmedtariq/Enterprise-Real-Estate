@@ -3,6 +3,7 @@ import cors from 'cors';
 import { connectDatabase } from './data/database';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import * as client from 'prom-client'; // Monitoring
 
 // Import Routes
 import propertyRoutes from './routes/propertyRoutes';
@@ -38,6 +39,15 @@ app.use('/api/v1/auth', authRoutes);
 // Health Check
 app.get('/health', (req, res) => {
     res.status(200).send("SOVEREIGN API: ONLINE");
+});
+
+// 📊 MONITORING
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics();
+
+app.get('/metrics', async (req, res) => {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
 });
 
 export default app;

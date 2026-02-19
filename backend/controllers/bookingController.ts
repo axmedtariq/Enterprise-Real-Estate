@@ -44,7 +44,7 @@ export const createBooking = async (req: Request, res: Response) => {
 // 📅 GET PROPERTY BOOKINGS (Availability)
 export const getPropertyBookings = async (req: Request, res: Response) => {
     try {
-        const { propertyId } = req.params;
+        const propertyId = String(req.params.propertyId);
         const bookings = await prisma.booking.findMany({
             where: { propertyId },
             select: { startDate: true, endDate: true }

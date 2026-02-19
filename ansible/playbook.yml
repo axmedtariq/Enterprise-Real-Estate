@@ -1,0 +1,68 @@
+---
+- name: Deploy Sovereign Real Estate Stack
+  hosts: all
+  become: true
+  user: ubuntu
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+    
+    - name: Install dependencies
+      apt:
+        name: 
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - git
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Install Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-linux-x86_64"
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Check if repo exists
+      stat:
+        path: /opt/sovereign-real-estate
+      register: repo_stat
+
+    - name: Clone repository
+      git:
+        repo: 'https://github.com/axmedtariq/Enterprise-Real-Estate.git' # Placeholder repo URL
+        dest: /opt/sovereign-real-estate
+        version: main
+        force: yes
+      when: not repo_stat.stat.exists
+
+    - name: Create .env file for backend
+      copy:
+        dest: /opt/sovereign-real-estate/backend/.env
+        content: |
+          PORT=5000
+          DATABASE_URL="sqlserver://sovereign_db:1433;database=RealEstate;user=sa;password=StrongPassword123!;encrypt=false;trustServerCertificate=true"
+          VAULT_ADDR=http://sovereign_vault:8200
+          # Add other secrets here (ideally use Ansible Vault)
+
+    - name: Start Docker Compose
+      command: docker-compose up -d --build
+      args:
+        chdir: /opt/sovereign-real-estate

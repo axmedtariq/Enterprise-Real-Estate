@@ -33,7 +33,7 @@ export const getAdvancedProperties = async (req: Request, res: Response) => {
 // 💎 GET PROPERTY DETAILS
 export const getPropertyDetails = async (req: Request, res: Response) => {
     try {
-        const { id } = req.params;
+        const id = String(req.params.id);
         const property = await prisma.property.findUnique({
             where: { id },
             include: { images: true }
@@ -52,7 +52,12 @@ export const getPropertyDetails = async (req: Request, res: Response) => {
 // 💎 CREATE PROPERTY (Admin)
 export const createProperty = async (req: Request, res: Response) => {
     try {
-        const { title, price, location, images, description, has3D, category } = req.body;
+        console.log("createProperty called");
+        console.log("Headers:", req.headers);
+        console.log("Body Type:", typeof req.body);
+        console.log("Body Content:", JSON.stringify(req.body));
+
+        const { title, price, location, images, description, has3D, category } = req.body || {};
 
         const property = await prisma.property.create({
             data: {
