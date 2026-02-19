@@ -66,3 +66,6 @@ backend/*.log
 
 # Ansible
 *.retry
+
+# Documentation with Secrets
+PROJECT_GUIDE.md
