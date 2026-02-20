@@ -23,13 +23,29 @@ export const createBooking = async (req: Request, res: Response) => {
             return res.status(400).json({ success: false, message: "Dates already booked." });
         }
 
+        let finalGuestId = guestId;
+
+        if (!finalGuestId) {
+            const guestUser = await prisma.user.upsert({
+                where: { email: 'guest@sovereign.com' },
+                update: {},
+                create: {
+                    name: 'Guest User',
+                    email: 'guest@sovereign.com',
+                    password: 'no-password',
+                    role: 'GUEST'
+                }
+            });
+            finalGuestId = guestUser.id;
+        }
+
         const booking = await prisma.booking.create({
             data: {
                 propertyId,
                 startDate: start,
                 endDate: end,
                 totalPrice: Number(totalPrice),
-                guestId: guestId || "GUEST_USER",
+                guestId: finalGuestId,
                 status: "confirmed"
             }
         });

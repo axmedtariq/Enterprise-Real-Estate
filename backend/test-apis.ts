@@ -27,12 +27,12 @@ async function testAPIs() {
             console.log(`✅ User: ${meRes.data.user.name} (${meRes.data.user.role})`);
 
             // 3. Get Properties (Public)
-            console.log('\nJX️ 3. Testing Get Properties (Public)...');
+            console.log('\n🏗️ 3. Testing Get Properties (Public)...');
             const propsRes = await axios.get(`${API_URL}/properties?limit=5`);
             console.log(`✅ Retrieved ${propsRes.data.count} properties (showing first 5)`);
 
             // 4. Create Property (Admin Only)
-            console.log('\nJX️ 4. Testing Create Property (Admin Only)...');
+            console.log('\n🏗️ 4. Testing Create Property (Admin Only)...');
             const newProp = {
                 title: 'Super Admin HQ',
                 price: 9999999,

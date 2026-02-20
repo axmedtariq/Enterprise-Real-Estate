@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: real-estate-enterprise
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/axmedtariq/Enterprise-Real-Estate.git
+    targetRevision: HEAD
+    path: k8s/charts/Real_App
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: real-estate
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

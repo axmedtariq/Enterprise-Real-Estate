@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { AppDispatch, RootState } from '../store/store';
-import { fetchProperties } from '../store/slices/propertySlice';
+import { AppDispatch, RootState } from '../../store/store';
+import { fetchProperties } from '../../store/slices/propertySlice';
 import { Heart, MessageCircle, Share2, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
