@@ -25,8 +25,18 @@ const clean = (data: any): any => {
 // OWASP XSS Protection Middleware
 export const xssClean = (req: Request, res: Response, next: NextFunction) => {
     if (req.body) req.body = clean(req.body);
-    if (req.query) req.query = clean(req.query);
-    if (req.params) req.params = clean(req.params);
+
+    if (req.query) {
+        for (const key in req.query) {
+            req.query[key] = clean(req.query[key]);
+        }
+    }
+
+    if (req.params) {
+        for (const key in req.params) {
+            req.params[key] = clean(req.params[key]);
+        }
+    }
 
     next();
 };
