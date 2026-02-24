@@ -8,6 +8,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Agency {
+  id              String     @id @default(uuid())
+  name            String
+  logoUrl         String?
+  description     String?    @db.Text
+  commissionRate  Float      @default(15.0) // Platform takes 15% from this agency
+  isVerified      Boolean    @default(false)
+  status          String     @default("PENDING") // PENDING, APPROVED, SUSPENDED
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  properties      Property[]
+  staff           User[]     // Internal agents/admins for this agency
+}
+
 model Property {
   id          String   @id @default(uuid())
   title       String
@@ -20,7 +35,10 @@ model Property {
   category    String   @default("buy") // 'buy' or 'rent'
   isVIP       Boolean  @default(false)
   videoUrl    String?  // Short-form video URL (TikTok/Reels style)
-  companyId   String   @default("SOVEREIGN_GLOBAL")
+  
+  agencyId    String?  // Links the property to the agency managing it
+  agency      Agency?  @relation(fields: [agencyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
@@ -31,7 +49,7 @@ model Property {
   maxGuests   Int      @default(2)
 
   @@index([price])
-  @@index([companyId])
+  @@index([agencyId])
 }
 
 model Image {
@@ -49,7 +67,7 @@ model Booking {
   totalPrice  Float
   status      String   @default("pending") // pending, confirmed, cancelled
   guestId     String
-  guest       User     @relation(fields: [guestId], references: [id])
+  guest       User     @relation(fields: [guestId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   propertyId  String
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
@@ -60,7 +78,7 @@ model Review {
   rating      Int
   comment     String
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   propertyId  String
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
@@ -71,8 +89,12 @@ model User {
   name              String
   email             String    @unique
   password          String
-  role              String    @default("USER")
+  role              String    @default("USER") // SUPER_ADMIN, AGENCY_ADMIN, AGENT, USER
   
+  // Agency Relation (Only populated if role is AGENCY_ADMIN or AGENT)
+  agencyId          String?
+  agency            Agency?   @relation(fields: [agencyId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
   // 2FA
   twoFactorSecret   String?
   twoFactorEnabled  Boolean   @default(false)

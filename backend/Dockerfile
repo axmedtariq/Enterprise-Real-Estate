@@ -1,5 +1,5 @@
 # STAGE 1: THE FORGE (BUILD)
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY . .
 RUN npm run build 
 
 # STAGE 2: THE TERMINAL (PRODUCTION)
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 
 WORKDIR /app
 

@@ -22,7 +22,11 @@ interface PropertyState {
         minPrice?: number;
         maxPrice?: number;
         search?: string;
+        page?: number;
+        limit?: number;
     };
+    totalPages: number;
+    currentPage: number;
 }
 
 const initialState: PropertyState = {
@@ -31,7 +35,11 @@ const initialState: PropertyState = {
     error: null,
     filters: {
         type: 'buy',
+        page: 1,
+        limit: 9,
     },
+    totalPages: 1,
+    currentPage: 1,
 };
 
 // Async Thunk for Fetching
@@ -42,11 +50,12 @@ export const fetchProperties = createAsyncThunk(
             let url = `http://localhost:5000/api/v1/properties?category=${filters.type}`;
             if (filters.minPrice) url += `&minPrice=${filters.minPrice}`;
             if (filters.maxPrice) url += `&maxPrice=${filters.maxPrice}`;
-            // Note: Backend currently doesn't support 'search' query param in this snippet, 
-            // but we add it for future compatibility
+            if (filters.search) url += `&search=${encodeURIComponent(filters.search)}`;
+            if (filters.page) url += `&page=${filters.page}`;
+            if (filters.limit) url += `&limit=${filters.limit}`;
 
             const { data } = await axios.get(url);
-            return data.data; // Assuming backend returns { success: true, data: [...] }
+            return data; // Return full response body containing pagination data
         } catch (err: any) {
             return rejectWithValue(err.response?.data?.message || 'Failed to fetch properties');
         }
@@ -69,7 +78,9 @@ const propertySlice = createSlice({
             })
             .addCase(fetchProperties.fulfilled, (state, action) => {
                 state.loading = false;
-                state.properties = action.payload;
+                state.properties = action.payload.data;
+                state.totalPages = action.payload.totalPages || 1;
+                state.currentPage = action.payload.currentPage || 1;
             })
             .addCase(fetchProperties.rejected, (state, action) => {
                 state.loading = false;

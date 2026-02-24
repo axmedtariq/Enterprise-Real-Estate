@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Outfit } from 'next/font/google';
 import './globals.css';
 import { ReduxProvider } from '../store/provider';
 import { Crown, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 
-const inter = Inter({ subsets: ['latin'] });
+const outfit = Outfit({ subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Sovereign Estate | Elite Real Estate',
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 export default function RootLayout({
   children,
@@ -20,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} bg-[#020617] text-white min-h-screen selection:bg-[#d4af37] selection:text-black`}>
+    <html lang="en" className="scroll-smooth bg-[#020617]">
+      <body className={`${outfit.className} bg-[#020617] text-white selection:bg-[#d4af37] selection:text-black antialiased`}>
         <ReduxProvider>
           {/* GLOBAL NAVIGATION */}
           <Navbar />
@@ -30,15 +31,7 @@ export default function RootLayout({
             {children}
           </main>
 
-          {/* NETWORK STATUS */}
-          <footer className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-            <div className="bg-black/60 backdrop-blur-lg border border-white/10 px-6 py-3 rounded-full flex items-center gap-4 shadow-2xl">
-              <div className="w-2 h-2 bg-[#d4af37] rounded-full animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                Network Reach: <span className="text-white font-mono">1.5M ACTIVE</span>
-              </span>
-            </div>
-          </footer>
+          <Footer />
         </ReduxProvider>
       </body>
     </html>

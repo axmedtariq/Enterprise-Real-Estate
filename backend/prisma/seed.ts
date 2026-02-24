@@ -3,96 +3,143 @@ import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
 
+const ROOM_IMAGES = [
+    'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=2000',
+    'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=2000',
+    'https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=2000',
+    'https://images.unsplash.com/photo-1502672260266-1c158bf8be4f?q=80&w=2000',
+    'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?q=80&w=2000',
+    'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=2000',
+];
+
 async function main() {
     console.log('Start seeding ...');
 
-    const users = [];
-    const properties = [];
+    // Clean existing database (Order matters due to foreign keys)
+    await prisma.review.deleteMany({});
+    await prisma.booking.deleteMany({});
+    await prisma.image.deleteMany({});
+    await prisma.property.deleteMany({});
+    await prisma.user.deleteMany({});
+    await prisma.agency.deleteMany({});
 
-    // Create 1000 Users
-    console.log('Creating 1000 users...');
-    for (let i = 0; i < 1000; i++) {
+    // Create 10 Agencies
+    console.log('Creating 10 agencies...');
+    const agencies = [];
+    for (let i = 0; i < 10; i++) {
+        const agency = await prisma.agency.create({
+            data: {
+                name: faker.company.name() + ' Real Estate',
+                description: faker.company.catchPhrase(),
+                commissionRate: faker.number.float({ min: 10, max: 20 }),
+                isVerified: true,
+                status: 'APPROVED',
+            },
+        });
+        agencies.push(agency);
+    }
+
+    // Create 100 Users
+    console.log('Creating 100 users...');
+    const users = [];
+    for (let i = 0; i < 100; i++) {
+        const role = faker.helpers.arrayElement(['USER', 'USER', 'USER', 'AGENCY_ADMIN', 'AGENT']);
+        let agencyId = null;
+        if (role === 'AGENCY_ADMIN' || role === 'AGENT') {
+            agencyId = faker.helpers.arrayElement(agencies).id;
+        }
+
         const user = await prisma.user.create({
             data: {
                 name: faker.person.fullName(),
                 email: faker.internet.email(),
                 password: faker.internet.password(), // In a real app, hash this!
-                role: faker.helpers.arrayElement(['USER', 'ADMIN']),
-                twoFactorEnabled: faker.datatype.boolean(),
+                role: role,
+                agencyId: agencyId,
+                twoFactorEnabled: false,
                 createdAt: faker.date.past(),
             },
         });
         users.push(user);
-        if ((i + 1) % 100 === 0) console.log(`Created ${i + 1} users`);
     }
 
-    // Create 500 Properties
-    console.log('Creating 500 properties...');
-    for (let i = 0; i < 500; i++) {
+    // Create Super Admin
+    await prisma.user.create({
+        data: {
+            name: 'Sovereign Admin',
+            email: 'admin@sovereign.com',
+            password: 'password123', // In a real app, hash this!
+            role: 'SUPER_ADMIN',
+            twoFactorEnabled: false,
+        }
+    });
+
+    // Create 100 Properties
+    console.log('Creating 100 properties...');
+    const properties = [];
+    for (let i = 0; i < 100; i++) {
         const property = await prisma.property.create({
             data: {
-                title: faker.commerce.productName() + ' Apartment',
-                price: parseFloat(faker.commerce.price({ min: 100000, max: 5000000 })),
-                address: faker.location.streetAddress(),
+                title: faker.commerce.productAdjective() + ' ' + faker.helpers.arrayElement(['Penthouse', 'Villa', 'Suite', 'Apartment']),
+                price: parseFloat(faker.finance.amount({ min: 100, max: 2000 })),
+                address: faker.location.streetAddress() + ', ' + faker.location.city(),
                 lat: faker.location.latitude(),
                 lng: faker.location.longitude(),
-                description: faker.lorem.paragraph(),
+                description: "Experience world-class luxury and service in this spectacular property. The perfect blend of comfort and style, featuring magnificent views and top-tier amenities. " + faker.lorem.paragraph(),
                 has3D: faker.datatype.boolean(),
                 category: faker.helpers.arrayElement(['buy', 'rent']),
                 isVIP: faker.datatype.boolean(),
-                videoUrl: faker.image.url(),
-                companyId: faker.company.name(), // Random company
-                amenities: JSON.stringify(faker.helpers.arrayElements(['WiFi', 'Pool', 'Gym', 'Parking', 'Air Conditioning'], { min: 1, max: 4 })),
+                videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                agencyId: faker.helpers.arrayElement(agencies).id,
+                amenities: JSON.stringify(faker.helpers.arrayElements(['WiFi', 'Pool', 'Gym', 'Parking', 'Air Conditioning', 'Room Service', 'Spa', 'Balcony'], { min: 3, max: 6 })),
                 maxGuests: faker.number.int({ min: 1, max: 10 }),
                 createdAt: faker.date.past(),
             },
         });
         properties.push(property);
 
-        // Create 1-3 Images for each property
-        const numImages = faker.number.int({ min: 1, max: 3 });
-        for (let j = 0; j < numImages; j++) {
+        // Add 3-5 Images for each property as requested (showcasing each room)
+        const numImages = faker.number.int({ min: 3, max: 5 });
+        const selectedImages = faker.helpers.arrayElements(ROOM_IMAGES, numImages);
+
+        for (let j = 0; j < selectedImages.length; j++) {
             await prisma.image.create({
                 data: {
                     publicId: faker.string.uuid(),
-                    url: faker.image.url(),
+                    url: selectedImages[j],
                     propertyId: property.id,
                 },
             });
         }
-
-        if ((i + 1) % 50 === 0) console.log(`Created ${i + 1} properties`);
     }
 
-    // Create 500 Bookings and Reviews
-    console.log('Creating 500 bookings & reviews...');
-    for (let i = 0; i < 500; i++) {
-        const randomUser = faker.helpers.arrayElement(users);
+    // Create 100 Bookings and Reviews
+    console.log('Creating 100 bookings & reviews...');
+    for (let i = 0; i < 100; i++) {
+        const randomUser = faker.helpers.arrayElement(users.filter(u => u.role === 'USER'));
         const randomProperty = faker.helpers.arrayElement(properties);
 
         // Booking
         await prisma.booking.create({
             data: {
-                startDate: faker.date.future(),
+                startDate: faker.date.soon(),
                 endDate: faker.date.future(),
-                totalPrice: parseFloat(faker.commerce.price({ min: 500, max: 5000 })),
+                totalPrice: randomProperty.price * faker.number.int({ min: 1, max: 7 }),
                 status: faker.helpers.arrayElement(['pending', 'confirmed', 'cancelled']),
                 guestId: randomUser.id,
                 propertyId: randomProperty.id,
             },
         });
 
-        // Review
+        // Review with some comments
         await prisma.review.create({
             data: {
-                rating: faker.number.int({ min: 1, max: 5 }),
-                comment: faker.lorem.sentence(),
+                rating: faker.number.int({ min: 3, max: 5 }),
+                comment: "The rooms looked exactly like the pictures! Outstanding experience.",
                 userId: randomUser.id,
                 propertyId: randomProperty.id,
             },
         });
-
-        if ((i + 1) % 50 === 0) console.log(`Created ${i + 1} bookings & reviews`);
     }
 
     console.log('Seeding finished.');

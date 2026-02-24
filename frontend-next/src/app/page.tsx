@@ -17,7 +17,7 @@ const MapSearch = dynamic(() => import('../components/MapSearch'), {
 
 export default function Home() {
   const dispatch = useDispatch<AppDispatch>();
-  const { properties, loading, filters } = useSelector((state: RootState) => state.properties);
+  const { properties, loading, filters, totalPages, currentPage } = useSelector((state: RootState) => state.properties);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
@@ -27,7 +27,14 @@ export default function Home() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // dispatch(setFilters({ ...filters, search: searchTerm }));
+    dispatch(setFilters({ ...filters, search: searchTerm, page: 1 }));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      dispatch(setFilters({ ...filters, page: newPage }));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -96,57 +103,82 @@ export default function Home() {
           {viewMode === 'map' ? (
             <MapSearch properties={properties} />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {properties.map((property) => (
-                <motion.div
-                  key={property.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  className="group bg-[#0f172a] rounded-[2rem] overflow-hidden border border-white/5 hover:border-[#d4af37]/50 transition-all duration-500"
-                >
-                  <div className="relative h-64 overflow-hidden">
-                    <img
-                      src={property.images?.[0]?.url || "https://images.unsplash.com/photo-1613490493576-7fde63acd811"}
-                      alt={property.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                      <span className="text-[#d4af37] text-[10px] font-black uppercase tracking-widest">
-                        ${property.price.toLocaleString()}
-                      </span>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {properties.map((property) => (
+                  <motion.div
+                    key={property.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="group bg-[#0f172a] rounded-[2rem] overflow-hidden border border-white/5 hover:border-[#d4af37]/50 transition-all duration-500"
+                  >
+                    <div className="relative h-64 overflow-hidden">
+                      <img
+                        src={property.images?.[0]?.url || "https://images.unsplash.com/photo-1613490493576-7fde63acd811"}
+                        alt={property.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                      <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                        <span className="text-[#d4af37] text-[10px] font-black uppercase tracking-widest">
+                          ${property.price.toLocaleString()}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-white mb-1 group-hover:text-[#d4af37] transition-colors line-clamp-1">{property.title}</h3>
-                        <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                          <MapPin className="w-3 h-3 text-[#d4af37]" />
-                          {property.address}
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-white mb-1 group-hover:text-[#d4af37] transition-colors line-clamp-1">{property.title}</h3>
+                          <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                            <MapPin className="w-3 h-3 text-[#d4af37]" />
+                            {property.address}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5">
-                      <div className="flex gap-3">
-                        {property.has3D && (
-                          <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold uppercase">
-                            <Building2 className="w-3 h-3 text-[#d4af37]" /> 3D Ready
-                          </div>
-                        )}
+                      <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5">
+                        <div className="flex gap-3">
+                          {property.has3D && (
+                            <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold uppercase">
+                              <Building2 className="w-3 h-3 text-[#d4af37]" /> 3D Ready
+                            </div>
+                          )}
+                        </div>
+                        <Link href={`/property/${property.id}`}>
+                          <button className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-2 group-hover:gap-3 transition-all">
+                            View Asset <ExternalLink className="w-3 h-3" />
+                          </button>
+                        </Link>
                       </div>
-                      <Link href={`/property/${property.id}`}>
-                        <button className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-2 group-hover:gap-3 transition-all">
-                          View Asset <ExternalLink className="w-3 h-3" />
-                        </button>
-                      </Link>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* PAGINATION CONTROLS */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-12 bg-[#0f172a] p-4 rounded-full border border-white/5 w-fit mx-auto">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-6 py-2 rounded-full border border-white/10 text-white hover:bg-[#d4af37]/20 hover:text-[#d4af37] disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-bold uppercase tracking-widest transition-all"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-white text-xs font-bold font-mono px-4">
+                    Page <span className="text-[#d4af37]">{currentPage}</span> of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-6 py-2 rounded-full border border-white/10 text-white hover:bg-[#d4af37]/20 hover:text-[#d4af37] disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-bold uppercase tracking-widest transition-all"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}

@@ -42,7 +42,9 @@ async function request(method, endpoint, data = null, token = null) {
 
         if (!response.ok) {
             // Handle expected errors (e.g. "path is already in use") by throwing, caller catches
-            throw new Error(`HTTP ${response.status}: ${text}`);
+            if (!(endpoint.includes('/sys/health') && response.status === 503)) {
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            }
         }
 
         // Handle empty responses (204 No Content)

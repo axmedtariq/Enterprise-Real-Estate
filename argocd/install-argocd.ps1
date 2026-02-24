@@ -14,7 +14,7 @@ $decodedPassword = [System.Text.Encoding]::UTF8.GetString([System.Convert]::From
 
 Write-Host "✅ ArgoCD Installed successfully!"
 Write-Host "🌐 You can access ArgoCD UI by port-forwarding:"
-Write-Host "kubectl port-forward svc/argocd-server -n argocd 8080:443"
+Write-Host "kubectl port-forward svc/argocd-server -n argocd 8081:443"
 Write-Host "Username: admin"
 Write-Host "Password: $decodedPassword"
 

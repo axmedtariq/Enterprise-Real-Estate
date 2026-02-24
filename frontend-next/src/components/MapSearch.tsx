@@ -12,12 +12,13 @@ const customIcon = new Icon({
 });
 
 export default function MapSearch({ properties }: { properties: any[] }) {
-    // Default to Dubai center if no properties
-    const center = properties[0] ? [properties[0].lat, properties[0].lng] : [25.1124, 55.1389];
+    const centerLat = properties?.[0]?.lat || 25.1124;
+    const centerLng = properties?.[0]?.lng || 55.1389;
+    const center = [centerLat, centerLng];
 
     return (
         <div className="h-[600px] w-full rounded-[2.5rem] overflow-hidden border border-white/10 relative z-0">
-            <MapContainer center={center as [number, number]} zoom={12} scrollWheelZoom={false} className="h-full w-full">
+            <MapContainer key={`map-${centerLat}-${centerLng}`} center={center as [number, number]} zoom={12} scrollWheelZoom={false} className="h-full w-full">
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

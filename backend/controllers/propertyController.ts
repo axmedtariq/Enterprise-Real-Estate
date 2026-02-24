@@ -4,7 +4,7 @@ import prisma from '../data/database';
 // 💎 GET ALL PROPERTIES (with filtering)
 export const getAdvancedProperties = async (req: Request, res: Response) => {
     try {
-        const { category, minPrice, maxPrice } = req.query;
+        const { category, minPrice, maxPrice, search } = req.query;
 
         const where: any = {};
         if (category) where.category = String(category);
@@ -14,15 +14,34 @@ export const getAdvancedProperties = async (req: Request, res: Response) => {
             if (maxPrice) where.price.lte = Number(maxPrice);
         }
 
-        const properties = await prisma.property.findMany({
-            where,
-            orderBy: { createdAt: 'desc' },
-            include: { images: true }
-        });
+        if (search) {
+            where.OR = [
+                { title: { contains: String(search) } },
+                { address: { contains: String(search) } }
+            ];
+        }
+
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 9;
+        const skip = (page - 1) * limit;
+
+        const [properties, totalCount] = await Promise.all([
+            prisma.property.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                include: { images: true },
+                skip,
+                take: limit
+            }),
+            prisma.property.count({ where })
+        ]);
 
         res.status(200).json({
             success: true,
             count: properties.length,
+            totalCount,
+            totalPages: Math.ceil(totalCount / limit),
+            currentPage: page,
             data: properties
         });
     } catch (error) {
