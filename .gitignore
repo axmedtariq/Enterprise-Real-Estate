@@ -44,6 +44,7 @@ vault/data/
 vault/vault-keys.json
 vault-update-summary.json
 backend-policy.hcl
+vault-seed.js
 
 # Scripts containing Secrets
 Scripts/setup-vault.bat
@@ -69,3 +70,6 @@ backend/*.log
 
 # Documentation with Secrets
 PROJECT_GUIDE.md
+
+# ArgoCD Secrets
+argocd-patch*
