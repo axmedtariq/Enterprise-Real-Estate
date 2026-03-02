@@ -9,6 +9,11 @@ import crypto from 'crypto';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
+// Elite JWT Security: User-specific secret generation
+const getDynamicSecret = (userRevision: number) => {
+    return `${JWT_SECRET}-${userRevision}`;
+};
+
 // --- AUTH CONTROLLER ---
 
 // REGISTER USER
@@ -29,11 +34,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
                 name,
                 email,
                 password: hashedPassword,
-                role: role || 'USER'
+                role: role || 'CUSTOMER'
             }
         });
 
-        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+        const token = jwt.sign(
+            { id: user.id, role: user.role, rev: user.jwtSecretRevision },
+            getDynamicSecret(user.jwtSecretRevision),
+            { expiresIn: '1d' }
+        );
 
         res.status(201).json({
             message: 'User registered successfully',
@@ -82,7 +91,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             }
         }
 
-        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+        const token = jwt.sign(
+            { id: user.id, role: user.role, rev: user.jwtSecretRevision },
+            getDynamicSecret(user.jwtSecretRevision),
+            { expiresIn: '1d' }
+        );
 
         res.json({
             message: 'Login successful',
@@ -278,3 +291,22 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 };
+// LOGOUT / REVOKE ALL SESSIONS (Elite Feature)
+export const logoutAllDevices = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const userId = (req as any).user.id;
+
+        // Increment the revision - This immediately kills all current tokens!
+        await prisma.user.update({
+            where: { id: userId },
+            data: { jwtSecretRevision: { increment: 1 } }
+        });
+
+        res.json({ message: 'Security reset: All devices logged out successfully.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+export default { login, register, enable2FA, verify2FA, forgotPassword, resetPassword, getMe, logoutAllDevices };

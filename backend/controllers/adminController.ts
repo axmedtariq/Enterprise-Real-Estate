@@ -4,7 +4,7 @@ import prisma from '../data/database';
 // GET Dashboard Stats for Sovereign Control Root
 export const getSuperAdminStats = async (req: Request, res: Response) => {
     try {
-        const usersCount = await prisma.user.count({ where: { role: 'USER' } });
+        const usersCount = await prisma.user.count({ where: { role: 'CUSTOMER' } });
         const propertiesCount = await prisma.property.count();
         const agenciesCount = await prisma.agency.count();
 

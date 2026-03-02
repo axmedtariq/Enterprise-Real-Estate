@@ -7,7 +7,7 @@ variable "project_name" {
 }
 
 resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
 
   tags = {
@@ -16,10 +16,10 @@ resource "aws_vpc" "main" {
 }
 
 resource "aws_subnet" "public" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
-  availability_zone = "us-east-1a"
+  availability_zone       = "us-east-1a"
 
   tags = {
     Name = "${var.project_name}-subnet-public"
@@ -101,11 +101,11 @@ resource "aws_security_group" "web_sg" {
 }
 
 resource "aws_instance" "web" {
-  ami           = "ami-0c7217cdde317cfec" # Ubuntu 20.04 LTS (us-east-1) - Update as needed
-  instance_type = "t3.medium"
-  subnet_id     = aws_subnet.public.id
+  ami                    = "ami-0c7217cdde317cfec" # Ubuntu 20.04 LTS (us-east-1) - Update as needed
+  instance_type          = "t3.medium"
+  subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.web_sg.id]
-  key_name      = "sovereign-key" # Expects existing key pair
+  key_name               = "sovereign-key" # Expects existing key pair
 
   tags = {
     Name = "${var.project_name}-server"

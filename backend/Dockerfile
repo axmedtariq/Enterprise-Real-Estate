@@ -28,10 +28,14 @@ COPY --from=builder /app/dist ./dist
 # If you have static assets or templates
 # COPY --from=builder /app/public ./public 
 
+# Copy Prisma schema
+COPY --from=builder /app/prisma ./prisma
+
 # Install only production dependencies (no dev-tools, no vulnerabilities)
 # ca-certificates for trusting DB and external APIs
 RUN apk add --no-cache ca-certificates && \
     npm install --omit=dev && \
+    npx prisma generate && \
     chown -R sovereign:sovereign /app
 
 # Security: Run as non-privileged user

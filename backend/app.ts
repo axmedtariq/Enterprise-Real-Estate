@@ -14,6 +14,42 @@ import adminRoutes from './routes/adminRoutes';
 
 const app = express();
 
+// 📊 RED PATTERN MONITORING METRICS (Prometheus)
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics();
+
+const httpRequestDurationMicroseconds = new client.Histogram({
+    name: 'http_request_duration_seconds',
+    help: 'Duration of HTTP requests in seconds (RED Pattern - Duration & Rates)',
+    labelNames: ['method', 'route', 'status_code'],
+    buckets: [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 7, 10] // Defined latency thresholds
+});
+
+// Middleware to calculate request duration & status (Errors)
+import logger from './utils/logger';
+app.use((req, res, next) => {
+    const start = Date.now();
+    const endMetrics = httpRequestDurationMicroseconds.startTimer();
+
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const route = req.route ? req.route.path : req.path;
+
+        // 📊 Metrics
+        endMetrics({ route: route, status_code: res.statusCode, method: req.method });
+
+        // 📝 ELK Logging
+        logger.info(`HTTP ${req.method} ${req.originalUrl}`, {
+            method: req.method,
+            url: req.originalUrl,
+            status: res.statusCode,
+            duration: `${duration}ms`,
+            ip: req.ip
+        });
+    });
+    next();
+});
+
 // 🛡️ SECURITY & MIDDLEWARE (MILITARY GRADE)
 // 1. Helmet: Sets 14+ secure HTTP headers (OWASP Security Misconfiguration)
 app.use(helmet());
@@ -45,8 +81,8 @@ app.use(cors({
     credentials: true
 }));
 
-// 🔗 DATABASE
-connectDatabase();
+// 🔗 DATABASE (Moved to server boot sequence)
+// connectDatabase();
 
 // 🚦 ROUTES
 app.use('/api/v1', propertyRoutes);
@@ -59,10 +95,7 @@ app.get('/health', (req, res) => {
     res.status(200).send("SOVEREIGN API: SECURE & ONLINE");
 });
 
-// 📊 MONITORING
-const collectDefaultMetrics = client.collectDefaultMetrics;
-collectDefaultMetrics();
-
+// 📊 MONITORING ENDPOINT
 app.get('/metrics', async (req, res) => {
     res.set('Content-Type', client.register.contentType);
     res.end(await client.register.metrics());

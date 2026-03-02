@@ -89,7 +89,7 @@ model User {
   name              String
   email             String    @unique
   password          String
-  role              String    @default("USER") // SUPER_ADMIN, AGENCY_ADMIN, AGENT, USER
+  role              String    @default("CUSTOMER") // ADMIN, AGENT, CUSTOMER
   
   // Agency Relation (Only populated if role is AGENCY_ADMIN or AGENT)
   agencyId          String?
@@ -103,6 +103,9 @@ model User {
   resetPasswordToken String?
   resetPasswordExpires DateTime?
 
+  // JWT Management
+  jwtSecretRevision Int       @default(1)
+  
   // Relations
   reviews           Review[]
   bookings          Booking[]

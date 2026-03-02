@@ -18,16 +18,20 @@ export default function BookingWidget({ property }: { property: any }) {
         if (!range?.from || !range?.to) return;
         setLoading(true);
         try {
-            await axios.post('http://localhost:5000/api/v1/bookings', {
+            const res = await axios.post('http://localhost:5000/api/v1/bookings/checkout', {
                 propertyId: property.id,
                 startDate: range.from,
                 endDate: range.to,
                 totalPrice,
                 guestId: "GUEST_USER" // In real app, get from Redux auth
             });
-            alert("Booking Confirmed! Welcome to the Elite.");
+            if (res.data.success && res.data.url) {
+                window.location.href = res.data.url;
+            } else {
+                alert("Could not initiate checkout.");
+            }
         } catch (err) {
-            alert("Dates unavailable. Please choose another range.");
+            alert("Error initiating checkout. Please try again.");
         } finally {
             setLoading(false);
         }

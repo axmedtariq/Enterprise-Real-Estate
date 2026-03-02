@@ -97,6 +97,10 @@ export const createProperty = async (req: Request, res: Response) => {
             }
         });
 
+        // 🧹 PURGE CACHE: Invalidate all property-related caches globally
+        const { clearCache } = require('../middlewares/cacheMiddleware');
+        await clearCache('sovereign-cache:/api/v1/properties*'); // Pattern clear if implemented, or manually
+
         res.status(201).json({
             success: true,
             message: "Sovereign Asset Registered",

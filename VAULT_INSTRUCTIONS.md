@@ -1,49 +1,56 @@
-# 🏦 Sovereign Vault Instructions
+# 🏛️ Sovereign Vault: Enterprise Production Guide
 
-For maximum security, the Sovereign Estate platform uses **HashiCorp Vault** to manage sensitive credentials (database passwords, API keys, etc.) instead of plain text `.env` files.
+The Sovereign Estate platform has been upgraded to **production-grade security**. Vault now runs in **Server Mode** with **HTTPS (TLS)** enabled, **Raft storage** clustering, and **AppRole** machine-to-machine authentication.
 
-## 1. Start the System
-Ensure the vault service is running:
+## 1. ⚙️ Production Mode Overview
+- **Storage**: Raft (Consensus clustering for high availability).
+- **Network**: Listener on HTTPS (TLS required).
+- **Unseal**: Manual (Standard) or Auto-Unseal (Transit/Cloud KMS).
+- **Logging**: Military-grade audit logging to `/vault/logs/audit.log`.
+
+## 2. 🏁 Initializing the Cluster
+When running in production mode for the first time, you must initialize and unseal:
+
 ```bash
+# 1. Start the vault server
 docker-compose up -d vault
+
+# 2. Initialize (Run only once manually)
+docker exec -it sovereign_vault vault operator init
 ```
-Access the Vault UI at: http://localhost:8200
-- **Token**: `sovereign-root-token`
+**⚠️ Save the unseal keys and root token securely!**
 
-## 2. Initialize Secrets
-You need to store your secrets in the Vault so the backend can retrieve them securely.
-
-### Option A: Using the Vault UI
-1. Login with the token above.
-2. Navigate to `secret/` -> `Create Secret`.
-3. Set path to: `sovereign-estate`
-4. Add the following Key/Value pairs:
-   - `DATABASE_URL`: `sqlserver://...`
-   - `JWT_SECRET`: `...`
-   - `CLOUDINARY_URL`: `...`
-   - `SMTP_HOST`: `...`
-   - `SMTP_USER`: `...`
-   - `SMTP_PASSWORD`: `...`
-
-### Option B: Using cURL (Command Line)
-Run the following command to populate the vault with default dev secrets:
+## 3. 🔓 Unsealing (Manual)
+Vault starts in a **Sealed** state. You must provide 3 of 5 unseal keys before any service can connect:
 
 ```bash
-curl --header "X-Vault-Token: sovereign-root-token" \
-     --request POST \
-     --data "{\"data\": {\"JWT_SECRET\": \"SUPER_SECRET_VAULT_KEY_2026\", \"DATABASE_URL\": \"sqlserver://sovereign_db:1433;database=elite_estate;user=sa;password=Sovereign_Secret_123!;encrypt=true;trustServerCertificate=true;\"}}" \
-     http://localhost:8200/v1/secret/data/sovereign-estate
+docker exec -it sovereign_vault vault operator unseal <key1>
+docker exec -it sovereign_vault vault operator unseal <key2>
+docker exec -it sovereign_vault vault operator unseal <key3>
 ```
 
-## 3. Verify Integration
-Restart the backend service. It will connect to the Vault, fetch these secrets, and inject them into the application environment.
+## 4. 🚀 Bootstrapping Production Security (Audit, AppRole, Policies)
+Once unsealed, run the **Sovereign Bootstrap** script to enable audit logs and generate AppRole credentials for the backend:
 
 ```bash
-docker-compose restart backend
+# Provide the root token from the 'init' step
+export VAULT_TOKEN="your-root-token"
+export VAULT_ADDR="https://localhost:8200"
+node vault/production-bootstrap.js
 ```
 
-## ⚠️ Security Note
-In a production environment:
-1. Do not use the `sovereign-root-token`.
-2. Unseal the vault manually.
-3. Configure strict access policies for the backend service.
+## 5. 🔑 AppRole Machine Authentication
+The backend no longer uses a root token. It uses an **AppRole** (`ROLE_ID` and `SECRET_ID`):
+
+1. Run the bootstrap script above.
+2. Note the generated `ROLE_ID` and `SECRET_ID`.
+3. Update `docker-compose.yml` or your CI/CD secrets:
+   - `VAULT_ROLE_ID`: "your-role-id"
+   - `VAULT_SECRET_ID`: "your-secret-id"
+
+## 🔍 Audit & Compliance
+All secret access and management actions are logged to the audit file for forensic tracking:
+`docker exec -it sovereign_vault tail -f /vault/logs/audit.log`
+
+---
+**The Sovereign Network is now protected by military-grade vault orchestration.**

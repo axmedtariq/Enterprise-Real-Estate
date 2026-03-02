@@ -2,6 +2,7 @@ import app from './app';
 import dotenv from 'dotenv';
 import http from 'http';
 import { Server, Socket } from 'socket.io';
+import { connectDatabase } from './data/database';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   // 🔐 SECURE BOOT SEQUENCE
   await initializeVault();
+  await connectDatabase();
 
   server.listen(PORT, () => {
     console.log(`🚀 Elite Enterprise Engine running on port ${PORT}`);

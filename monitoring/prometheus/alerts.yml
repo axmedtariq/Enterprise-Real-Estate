@@ -1,0 +1,133 @@
+groups:
+  - name: website_alerts
+    rules:
+      - alert: HighCpuUsage
+        expr: sum(rate(container_cpu_usage_seconds_total{name=~".+"}[1m])) by (name) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} has high CPU usage"
+          description: "Container usage has been above 80% for the last 5 minutes."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/high-cpu-usage"
+          
+      - alert: WebsiteDown
+        expr: up{job="sovereign_backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend API is down"
+          description: "Prometheus could not scrape the backend metrics endpoint."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/backend-down-recovery"
+
+      - alert: VaultDown
+        expr: up{job="vault"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Vault is down"
+          description: "Prometheus could not scrape the Vault metrics endpoint."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/vault-unseal-recovery"
+
+      - alert: VaultSealed
+        expr: vault_core_unsealed{job="vault"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical: Vault is Sealed"
+          description: "Vault is completely sealed! Applications cannot fetch database passwords or secret keys. Unseal immediately."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/vault-unseal-recovery"
+
+      - alert: HighTokenCreationRate
+        expr: rate(vault_token_creation_count[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Vault Token Creation Rate"
+          description: "Tokens are being created at an unusually rapid pace (>100 tokens per 5m). Investigate for a potential runaway script or token leak."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/vault-token-anomaly"
+
+      - alert: HighSecretLeaseExpirations
+        expr: rate(vault_expire_num_leases[5m]) > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Secret Lease Expirations"
+          description: "Multiple secret leases are revoking or expiring very rapidly. Verify dynamic secrets (like DB credentials) are rotating properly."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/vault-lease-rotation"
+
+      # ==========================================
+      # FRONTEND ALERTS (The User Experience)
+      # ==========================================
+      - alert: HighJSErrorRate
+        expr: rate(faro_web_errors_total[10m]) / rate(faro_web_sessions_total[10m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "JavaScript Error rate exceeds 5%"
+          description: "Over 5% of Next.js user sessions are encountering unhandled JS errors in the last 10 minutes."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/frontend-js-crash"
+
+      - alert: SlowPageLoadTimes
+        expr: histogram_quantile(0.8, sum(rate(faro_web_page_load_time_seconds_bucket[5m])) by (le)) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Frontend Page Load > 3s"
+          description: "20% of users are experiencing page load times greater than 3 seconds."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/frontend-performance"
+
+      # ==========================================
+      # BACKEND ALERTS (The RED Pattern)
+      # ==========================================
+      - alert: HighBackendLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="sovereign_backend"}[5m])) by (le)) > 0.5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend Latency > 500ms"
+          description: "95th percentile backend latency has remained over 500ms for 5 minutes. (Duration Anomaly)"
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/backend-high-latency"
+
+      - alert: LowSuccessRate
+        expr: sum(rate(http_request_duration_seconds_count{job="sovereign_backend", status_code=~"2.*"}[5m])) / sum(rate(http_request_duration_seconds_count{job="sovereign_backend"}[5m])) < 0.98
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend Success Rate < 98%"
+          description: "Over 2% of backend requests are resulting in errors (HTTP 4xx/5xx). (Error Rate Anomaly)"
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/backend-low-success"
+
+      # ==========================================
+      # DATABASE ALERTS (The State)
+      # ==========================================
+      - alert: DatabaseConnectionsHigh
+        expr: sqlserver_connections_active / sqlserver_connections_max > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Active Connections > 80% capacity"
+          description: "SQL Server is critically low on connection pool availability."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/database-connections"
+
+      - alert: DatabaseDiskSpaceCritical
+        expr: (sqlserver_database_files_size_bytes - sqlserver_database_files_space_used_bytes) / sqlserver_database_files_size_bytes < 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database disk space < 10%"
+          description: "SQL Data Volumes are almost completely full! Expand disk size immediately."
+          runbook_url: "https://wiki.sovereign-control.local/runbooks/database-disk-resize"
+
+

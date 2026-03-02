@@ -19,10 +19,10 @@ export default function SovereignControlLogin() {
         setLoading(true);
 
         try {
-            const res = await axios.post('http://localhost:5000/api/v1/auth/login', { email, password });
+            const res = await axios.post('/api/v1/auth/login', { email, password });
             const data = res.data;
 
-            if (data.user && data.user.role === 'SUPER_ADMIN') {
+            if (data.user && data.user.role === 'ADMIN') {
                 // Storing token solely for Admin route validation wrapper uses
                 localStorage.setItem('adminToken', data.token);
                 router.push('/sovereign-control');

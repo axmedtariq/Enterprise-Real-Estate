@@ -21,21 +21,34 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as DecodedToken;
+        // 1. Decode WITHOUT verification first to get the revision claim
+        const unverifiedDecoded = jwt.decode(token) as any;
+        if (!unverifiedDecoded || !unverifiedDecoded.id) {
+            return res.status(401).json({ message: 'Invalid token structure' });
+        }
 
+        // 2. Fetch user to get their CURRENT secret revision
         const user = await prisma.user.findUnique({
-            where: { id: decoded.id },
-            select: { id: true, role: true, email: true, name: true } // Exclude password
+            where: { id: unverifiedDecoded.id },
+            select: { id: true, role: true, email: true, name: true, jwtSecretRevision: true }
         });
 
         if (!user) {
             return res.status(401).json({ message: 'User no longer exists' });
         }
 
+        // 3. Verify the token using the user-specific dynamic secret
+        const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+        const dynamicSecret = `${JWT_SECRET}-${user.jwtSecretRevision}`;
+
+        jwt.verify(token, dynamicSecret);
+
+        // 4. Attach user and move on
         (req as any).user = user;
         next();
     } catch (error) {
-        return res.status(401).json({ message: 'Not authorized to access this route' });
+        console.error("JWT Verification Failed:", error);
+        return res.status(401).json({ message: 'Session expired or security reset' });
     }
 };
 

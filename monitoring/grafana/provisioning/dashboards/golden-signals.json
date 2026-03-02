@@ -1,0 +1,142 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "title": "Row: SRE Golden Signals",
+      "type": "row",
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 1
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Request latency across endpoints",
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "auto", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 1 },
+      "id": 2,
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])", "legendFormat": "{{handler}}" } ],
+      "title": "1. Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "HTTP Requests Per Second",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "fillOpacity": 20, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2, "spanNulls": false, "stacking": { "group": "A", "mode": "normal" } } }, "mappings": [], "unit": "reqps" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 1 },
+      "id": 3,
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_requests_total[5m])) by (status)", "legendFormat": "{{status}}" } ],
+      "title": "2. Traffic",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Failed Request Rate",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic", "seriesBy": "last" }, "custom": { "fillOpacity": 20, "gradientMode": "opacity", "lineInterpolation": "smooth", "lineWidth": 2 } } },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 1 },
+      "id": 4,
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_requests_total{status=~\"5.*\"}[5m]))", "legendFormat": "5xx Errors" } ],
+      "title": "3. Errors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "System Resource Saturation",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 70 }, { "color": "red", "value": 90 } ] }, "unit": "percent" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 1 },
+      "id": 5,
+      "options": { "orientation": "auto", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "(sum(node_memory_MemTotal_bytes) - sum(node_memory_MemFree_bytes)) / sum(node_memory_MemTotal_bytes) * 100", "legendFormat": "Memory" }, { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "avg(rate(node_cpu_seconds_total{mode!=\"idle\"}[5m])) * 100", "legendFormat": "CPU" } ],
+      "title": "4. Saturation",
+      "type": "gauge"
+    },
+    {
+      "title": "Row: Advanced Visualizations",
+      "type": "row",
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 6
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "State Timeline visualization for container lifetimes",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "fillOpacity": 70, "lineWidth": 0 }, "mappings": [ { "options": { "0": { "color": "red", "index": 1, "text": "Down" }, "1": { "color": "green", "index": 0, "text": "Up" } }, "type": "value" } ] }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+      "id": 7,
+      "options": { "alignValue": "center", "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "mergeValues": true, "rowHeight": 0.9, "showValue": "auto", "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up", "legendFormat": "{{job}}" } ],
+      "title": "Pod/Service History (State Timeline)",
+      "type": "state-timeline"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Geographical distribution of requests",
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 80 } ] } }, "overrides": [] },
+      "gridPos": { "h": 16, "w": 12, "x": 12, "y": 10 },
+      "id": 8,
+      "options": { "basemap": { "config": {}, "name": "carto-dark", "type": "default" }, "controls": { "mouseWheelZoom": true, "showAttribution": true, "showDebug": false, "showScale": false, "showZoom": true }, "layers": [ { "config": { "showLegend": true, "style": { "color": { "fixed": "dark-green" }, "opacity": 0.4, "rotation": { "fixed": 0, "max": 360, "min": -360 }, "size": { "fixed": 5, "max": 15, "min": 2 }, "symbol": { "fixed": "img/icons/marker/circle.svg", "mode": "fixed" }, "text": { "fixed": "", "mode": "fixed" }, "textConfig": { "fontSize": 12, "offsetX": 0, "offsetY": 0, "textAlign": "center", "textBaseline": "middle" } } }, "location": { "lookup": "country", "mode": "auto" }, "name": "Layer 1", "tooltip": true, "type": "markers" } ], "tooltip": { "mode": "details" }, "view": { "id": "zero", "lat": 0, "lon": 0, "zoom": 1 } },
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(increase(http_requests_total[5m])) by (country)", "legendFormat": "{{country}}" } ],
+      "title": "Global Request Volume (Geomap)",
+      "type": "geomap"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Top 10 Memory Consuming Containers",
+      "fieldConfig": { "defaults": { "color": { "mode": "continuous-GrYlRd" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null } ] }, "unit": "bytes" }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 18 },
+      "id": 9,
+      "options": { "displayMode": "gradient", "minVizHeight": 10, "minVizWidth": 0, "orientation": "horizontal", "reduceOptions": { "calcs": [ "lastNotNull" ], "fields": "", "values": false }, "showUnfilled": true },
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "topk(10, container_memory_usage_bytes{name=~\"sovereign_.*\"})", "legendFormat": "{{name}}" } ],
+      "title": "Top 10 Memory Usage (Bar Gauge)",
+      "type": "bargauge"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Visualizing traces and service interactions",
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } }, "mappings": [] }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 18 },
+      "id": 10,
+      "options": { "edges": { "mainStatUnit": "ms" }, "nodes": { "mainStatUnit": "req/s" } },
+      "targets": [ { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "up", "legendFormat": "Node Interactions Dummy Data" } ],
+      "title": "Service Topology (Node Graph)",
+      "type": "nodeGraph"
+    }
+  ],
+  "schemaVersion": 38,
+  "tags": [ "sre", "golden-signals", "advanced", "sovereign" ],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "👑 Sovereign SRE: Golden Signals & Advanced Diagnostics",
+  "uid": "sovereign-sre-golden-signals",
+  "version": 1
+}

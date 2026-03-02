@@ -10,11 +10,13 @@ const getVaultOptions = () => {
     const endpoint = process.env.VAULT_ADDR || (isProduction ? 'https://sovereign_vault:8200' : 'http://sovereign_vault:8200');
 
     // Load CA Cert if in production/TLS mode
-    let requestOptions = {};
+    let requestOptions: any = {
+        strictSSL: false,
+        rejectUnauthorized: false
+    };
+
     if (process.env.VAULT_CACERT && fs.existsSync(process.env.VAULT_CACERT)) {
-        requestOptions = {
-            ca: fs.readFileSync(process.env.VAULT_CACERT)
-        };
+        requestOptions.ca = fs.readFileSync(process.env.VAULT_CACERT);
     }
 
     return {
@@ -68,6 +70,7 @@ export const initializeVault = async () => {
 
                 // Inject secrets into process.env
                 Object.keys(secrets).forEach(key => {
+                    console.log(`📡 Injecting secret from Vault: ${key}`);
                     process.env[key] = secrets[key];
                 });
             } else {

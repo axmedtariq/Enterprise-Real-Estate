@@ -20,7 +20,7 @@ async function createSuperAdmin() {
                 where: { email },
                 data: {
                     password: hashedPassword,
-                    role: 'SUPER_ADMIN', // Ensuring role is SUPER_ADMIN
+                    role: 'ADMIN', // Ensuring role is ADMIN
                     name: name
                 }
             });
@@ -37,7 +37,7 @@ async function createSuperAdmin() {
                     name,
                     email,
                     password: hashedPassword,
-                    role: 'SUPER_ADMIN',
+                    role: 'ADMIN',
                     twoFactorEnabled: false
                 }
             });
