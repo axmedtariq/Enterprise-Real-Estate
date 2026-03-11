@@ -52,8 +52,8 @@ async function migrate() {
             if (!keysToExclude.includes(key)) {
                 let value = envConfig[key];
                 // Transform localhost to sovereign_db for internal docker communication
-                if (key === 'DATABASE_URL' && value.includes('localhost')) {
-                    value = value.replace('localhost', 'sovereign_db');
+                if (key === 'DATABASE_URL') {
+                    value = value.replace('localhost', 'db').replace('127.0.0.1', 'db');
                 }
                 secretsToMigrate[key] = value;
             }

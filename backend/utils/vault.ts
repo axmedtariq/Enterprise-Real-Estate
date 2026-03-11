@@ -59,10 +59,12 @@ export const initializeVault = async () => {
         }
 
         // Try to read secrets from a specific path
-        // Path: secret/data/sovereign-estate
+        const secretPath = 'secret/data/sovereign-estate';
+        console.log(`📡 Attempting to read secrets from: ${secretPath}`);
+
         try {
-            const secretPath = 'secret/data/sovereign-estate';
             const result = await vaultClient.read(secretPath);
+            console.log("🔍 Vault Response Structure:", JSON.stringify(result).substring(0, 100) + "...");
 
             if (result && result.data && result.data.data) {
                 const secrets = result.data.data;
@@ -74,13 +76,16 @@ export const initializeVault = async () => {
                     process.env[key] = secrets[key];
                 });
             } else {
-                console.warn("⚠️ No secrets found at 'secret/data/sovereign-estate'. Using local .env fallback.");
+                console.warn("⚠️ Data structure mismatch at 'secret/data/sovereign-estate'. Content:", JSON.stringify(result));
             }
         } catch (err: any) {
+            console.error("❌ Vault read error detail:", {
+                message: err.message,
+                status: err.response?.statusCode,
+                body: err.response?.body
+            });
             if (err.response && err.response.statusCode === 404) {
                 console.warn("⚠️ Secret path not found. Please initialize secrets in Vault.");
-            } else {
-                console.error("❌ vault read error", err);
             }
         }
 

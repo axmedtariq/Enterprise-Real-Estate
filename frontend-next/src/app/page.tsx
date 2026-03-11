@@ -17,7 +17,7 @@ const MapSearch = dynamic(() => import('../components/MapSearch'), {
 
 export default function Home() {
   const dispatch = useDispatch<AppDispatch>();
-  const { properties, loading, filters, totalPages, currentPage } = useSelector((state: RootState) => state.properties);
+  const { properties, loading, error, filters, totalPages, currentPage } = useSelector((state: RootState) => state.properties);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
@@ -94,6 +94,19 @@ export default function Home() {
       </div>
 
       {/* CONTENT */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-6 rounded-2xl text-center mb-8">
+          <p className="font-bold uppercase tracking-widest text-xs mb-2">Sovereign Link Failure</p>
+          <p className="text-sm opacity-80">{error}</p>
+          <button
+            onClick={() => dispatch(fetchProperties(filters))}
+            className="mt-4 px-6 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+          >
+            Re-Establish Connection
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="w-10 h-10 text-[#d4af37] animate-spin" />
@@ -104,60 +117,71 @@ export default function Home() {
             <MapSearch properties={properties} />
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {properties.map((property) => (
-                  <motion.div
-                    key={property.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="group bg-[#0f172a] rounded-[2rem] overflow-hidden border border-white/5 hover:border-[#d4af37]/50 transition-all duration-500"
-                  >
-                    <div className="relative h-64 overflow-hidden">
-                      <img
-                        src={property.images?.[0]?.url || "https://images.unsplash.com/photo-1613490493576-7fde63acd811"}
-                        alt={property.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                        <span className="text-[#d4af37] text-[10px] font-black uppercase tracking-widest">
-                          ${property.price.toLocaleString()}
-                        </span>
+              {!error && properties.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-20 bg-[#0f172a] rounded-[2.5rem] border border-white/5">
+                  <Building2 className="w-16 h-16 text-slate-700 mb-6" />
+                  <h3 className="text-2xl font-black text-white mb-2">No Assets Detected</h3>
+                  <p className="text-slate-500 text-center max-w-sm">
+                    No properties currently match your search criteria in the {filters.type} category.
+                    Try adjusting your filters or checking the database status.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {properties.map((property) => (
+                    <motion.div
+                      key={property.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      className="group bg-[#0f172a] rounded-[2rem] overflow-hidden border border-white/5 hover:border-[#d4af37]/50 transition-all duration-500"
+                    >
+                      <div className="relative h-64 overflow-hidden">
+                        <img
+                          src={property.images?.[0]?.url || "https://images.unsplash.com/photo-1613490493576-7fde63acd811"}
+                          alt={property.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                          <span className="text-[#d4af37] text-[10px] font-black uppercase tracking-widest">
+                            ${property.price.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-xl font-bold text-white mb-1 group-hover:text-[#d4af37] transition-colors line-clamp-1">{property.title}</h3>
-                          <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
-                            <MapPin className="w-3 h-3 text-[#d4af37]" />
-                            {property.address}
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="text-xl font-bold text-white mb-1 group-hover:text-[#d4af37] transition-colors line-clamp-1">{property.title}</h3>
+                            <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
+                              <MapPin className="w-3 h-3 text-[#d4af37]" />
+                              {property.address}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5">
-                        <div className="flex gap-3">
-                          {property.has3D && (
-                            <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold uppercase">
-                              <Building2 className="w-3 h-3 text-[#d4af37]" /> 3D Ready
-                            </div>
-                          )}
+                        <div className="flex items-center justify-between mt-6 pt-6 border-t border-white/5">
+                          <div className="flex gap-3">
+                            {property.has3D && (
+                              <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold uppercase">
+                                <Building2 className="w-3 h-3 text-[#d4af37]" /> 3D Ready
+                              </div>
+                            )}
+                          </div>
+                          <Link href={`/property/${property.id}`}>
+                            <button className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-2 group-hover:gap-3 transition-all">
+                              View Asset <ExternalLink className="w-3 h-3" />
+                            </button>
+                          </Link>
                         </div>
-                        <Link href={`/property/${property.id}`}>
-                          <button className="text-[10px] font-black uppercase tracking-widest text-[#d4af37] flex items-center gap-2 group-hover:gap-3 transition-all">
-                            View Asset <ExternalLink className="w-3 h-3" />
-                          </button>
-                        </Link>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
 
               {/* PAGINATION CONTROLS */}
-              {totalPages > 1 && (
+              {totalPages > 1 && properties.length > 0 && (
                 <div className="flex justify-center items-center gap-4 mt-12 bg-[#0f172a] p-4 rounded-full border border-white/5 w-fit mx-auto">
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}

@@ -47,17 +47,22 @@ export const fetchProperties = createAsyncThunk(
     'properties/fetch',
     async (filters: PropertyState['filters'], { rejectWithValue }) => {
         try {
-            let url = `http://localhost:5000/api/v1/properties?category=${filters.type}`;
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+            let url = `${API_URL}/properties?category=${filters.type}`;
             if (filters.minPrice) url += `&minPrice=${filters.minPrice}`;
             if (filters.maxPrice) url += `&maxPrice=${filters.maxPrice}`;
             if (filters.search) url += `&search=${encodeURIComponent(filters.search)}`;
             if (filters.page) url += `&page=${filters.page}`;
             if (filters.limit) url += `&limit=${filters.limit}`;
 
+            console.log(`🔍 Sovereign Dispatch: Fetching assets from ${url}`);
             const { data } = await axios.get(url);
+            console.log(`✅ Sovereign Success: Received ${data.count || data.length} assets`);
             return data; // Return full response body containing pagination data
         } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || 'Failed to fetch properties');
+            console.error('❌ Sovereign Link Error:', err.response?.data || err.message);
+            const errorMessage = err.response?.data?.message || err.message || 'Failed to fetch properties';
+            return rejectWithValue(errorMessage);
         }
     }
 );

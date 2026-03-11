@@ -57,16 +57,18 @@ app.use(helmet());
 // 2. Rate Limiting: Prevent Brute Force & DDoS attacks
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100, // Strict 100 requests per IP
+    max: 5000, // Relaxed for local dev & monitoring reliability
     standardHeaders: true,
     legacyHeaders: false,
-    message: 'Too many requests from this IP, strict rate-limit enforced.'
+    message: 'Sovereign Security: Rate limit exceeded. Please wait 15 minutes.'
 });
-app.use(limiter);
 
-// Parse JSON payload (Size limited to 10kb to prevent payload overflow attacks)
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+// Apply limiter to API routes only, keeping /metrics and health clear
+app.use('/api/v1', limiter);
+
+// Parse JSON payload (Increased to 50kb for reservation stability)
+app.use(express.json({ limit: '50kb' }));
+app.use(express.urlencoded({ extended: true, limit: '50kb' }));
 
 // 3. XSS Protection: Deep sanitization of HTML & JS tags in body/query/params
 app.use(xssClean);
@@ -76,7 +78,7 @@ app.use(hpp());
 
 // 5. Strict CORS Policy (Prevents Cross-Origin Exploits)
 app.use(cors({
-    origin: ["http://localhost:3000", "http://localhost:5000"], // Set strict production hosts later
+    origin: ["http://localhost:3000", "http://localhost:5000", "http://127.0.0.1:3000", "http://127.0.0.1:5000"], // Expanded for local dev reliability
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
 }));
@@ -99,6 +101,16 @@ app.get('/health', (req, res) => {
 app.get('/metrics', async (req, res) => {
     res.set('Content-Type', client.register.contentType);
     res.end(await client.register.metrics());
+});
+
+// 🛡️ GLOBAL ERROR WATCHTOWER (Sovereign Safety)
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('❌ SOVEREIGN CRITICAL ERROR:', err);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || "Internal Sovereign Engine Error",
+        error: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
 });
 
 export default app;

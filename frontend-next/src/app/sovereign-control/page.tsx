@@ -20,7 +20,8 @@ export default function SovereignControlDashboard() {
             const token = localStorage.getItem('adminToken');
             if (!token) throw new Error('No token');
 
-            const res = await axios.get('http://localhost:5000/api/v1/admin/stats', {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+            const res = await axios.get(`${API_URL}/admin/stats`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStats(res.data.data);
@@ -44,7 +45,8 @@ export default function SovereignControlDashboard() {
     const handleStatusChange = async (agencyId: string, newStatus: string) => {
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.put('http://localhost:5000/api/v1/admin/agency/status',
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+            await axios.put(`${API_URL}/admin/agency/status`,
                 { agencyId, status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } });
 

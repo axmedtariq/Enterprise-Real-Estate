@@ -1,7 +1,5 @@
 import winston from 'winston';
-import { LogstashTransport } from 'winston-logstash-ts';
 
-// 🏛️ SOVEREIGN LOGGING INFRASTRUCTURE (ELK Integrated)
 const isProduction = process.env.NODE_ENV === 'production';
 
 const transports: winston.transport[] = [
@@ -25,20 +23,7 @@ const transports: winston.transport[] = [
     })
 ];
 
-// 3. 🛡️ LOGSTASH TRANSPORT (Centralized ELK Stack)
-// For local PC deployment, these connect to the 'sovereign_logstash' container on 5044
-const logstashHost = process.env.LOGSTASH_HOST || 'logstash';
-const logstashPort = parseInt(process.env.LOGSTASH_PORT || '5044');
-
-transports.push(new LogstashTransport({
-    host: logstashHost,
-    port: logstashPort,
-    protocol: 'tcp',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.logstash()
-    )
-}));
+import { sendSlackNotification } from './sendSlack';
 
 const logger = winston.createLogger({
     level: isProduction ? 'info' : 'debug',
@@ -50,6 +35,15 @@ const logger = winston.createLogger({
     transports: transports
 });
 
+// 🛡️ SLACK ALERT INTERCEPTOR
+// Automatically notify Slack when a critical Error occurs
+const originalError = logger.error.bind(logger);
+logger.error = (message: any, ...args: any[]) => {
+    // Only notify in non-local environments or if explicitly needed
+    sendSlackNotification(`[Critical Error]: ${message}`, 'error');
+    return originalError(message, ...args);
+};
+
 // Capture unhandled exceptions & promise rejections
 logger.exceptions.handle(
     new winston.transports.File({ filename: 'logs/exceptions.log' })
@@ -59,6 +53,6 @@ process.on('unhandledRejection', (ex) => {
     throw ex;
 });
 
-console.log(`📡 SOVEREIGN LOGGER: Centralized ELK Transport Active on ${logstashHost}:${logstashPort}`);
+console.log(`📡 SOVEREIGN LOGGER: Local File/Console Logging Active`);
 
 export default logger;

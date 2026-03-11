@@ -18,7 +18,8 @@ export default function PropertyDetails() {
     useEffect(() => {
         const fetchProp = async () => {
             try {
-                const { data } = await axios.get(`http://localhost:5000/api/v1/property/${id}`);
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1';
+                const { data } = await axios.get(`${API_URL}/property/${id}`);
                 // Assuming API returns property and its reviews included or separate
                 if (data.data) {
                     setProperty(data.data);

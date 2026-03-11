@@ -32,33 +32,37 @@ Sovereign Estate is a cutting-edge luxury real estate platform designed to rival
 *   **Backend:** Node.js, Express.js, SQL Server (Prisma ORM)
 *   **DevOps & Automation:** Docker, Kubernetes (Minikube), Jenkins (CI/CD pipelines)
 *   **Infrastructure as Code (IaC):** Terraform, Ansible
-*   **Security & Monitoring:** HashiCorp Vault (AppRole Encryption), Prometheus, Grafana, ArgoCD (GitOps)
+*   **Security & Monitoring:** HashiCorp Vault (AppRole Encryption), Prometheus, Grafana, ArgoCD (GitOps), Istio Service Mesh (mTLS + Kiali)
 
 ### 🚀 3. Key Achievements & Features (The Value)
 
-*   **Bank-Grade Security Architecture:** Engineered a zero-trust environment using HashiCorp Vault to dynamically decrypt sensitive environment variables via AppRole machine-to-machine authentication. Protected user data with Time-Based One-Time Password (2FA) and JSON Web Tokens (JWT).
-*   **Modern Interactive Frontend:** Delivered a breathtaking, premium UI using Next.js and Tailwind CSS. Built complex components including an interactive React-Leaflet Map for geospatial property searching and an IntersectionObserver-powered streaming Video Feed for property "reels".
-*   **Full DevOps CI/CD Pipeline:** Completely containerized the entire monolithic architecture. Automated deployments utilizing ArgoCD (GitOps), allowing Kubernetes pods to self-heal and sync instantly with GitHub repository changes.
-*   **Real-time Executive Telemetry:** Integrated a dedicated Prometheus and Grafana metrics server to monitor live cluster health, API request volume, and node latency—all gated behind strict Basic Auth encryption.
-*   **Isolated Super-Admin Dashboard:** Designed an exclusive Sovereign Control Board for database management. Administrators can perform real-time CRUD operations, elevate user permissions to 'Agents', and permanently scrub accounts from the SQL Server database.
+*   **Bank-Grade Security Architecture:** Engineered a zero-trust environment using HashiCorp Vault for dynamic secret injection. Secured the service mesh with Mutual TLS (mTLS) via Istio, ensuring encrypted communication between all microservices.
+*   **Self-Healing GitOps Infrastructure:** Implemented a robust "Desired State" architecture using ArgoCD. The cluster automatically detects and corrects configuration drift, providing 100% resilience against manual errors and transient pod failures.
+*   **Enterprise "Cockpit" Observability:** Architected a high-density monitoring suite using Grafana, Prometheus, and Kiali. Developed custom "Flight Control" dashboards for real-time visualization of traffic weight, request latency (heatmaps), and global system health.
+*   **Modern Interactive Frontend:** Delivered a breathtaking, premium UI using Next.js and Tailwind CSS. Built complex components including an interactive React-Leaflet Map for geospatial property searching and an streaming Video Feed for property "reels".
+*   **Full DevOps CI/CD Pipeline:** Automated the entire development lifecycle. Integrated automated security scanning (Trivy/TFSec) into Jenkins pipelines to ensure every Docker build is production-hardened before deployment.
 
-### 📸 4. Highlighting Your Work (Contra Visuals)
-When adding this to Contra, make sure to upload:
-1. **A GIF/Video** of the interactive map dynamically searching and zooming to a location.
-2. **Screenshots** of the dark-mode luxury UI (especially the video feed and property detail pages with the image gallery).
-3. **A Screenshot** of your Grafana Dashboards displaying real-time server metrics.
-4. **A Screenshot** of the Sovereign Control Super Admin dashboard showing user management. 
-5. **A Diagram (Bonus)** of your Kubernetes structure (ArgoCD, Vault, Backend, Frontend, and Database).
+### 📸 4. Highlighting Your Work (The Showcase Video)
+When adding this to Contra, your **Video Walkthrough** should be the primary featured item:
+
+1.  **THE "COCKPIT" VIDEO (Primary):** A 90-second walkthrough showing the Grafana dashboard, the Kiali service map, and the self-healing demonstration (deleting a pod and watching it recover).
+2.  **Screenshots:** 
+    - The **Kiali Service Graph** showing connection weight.
+    - The **Istio latency Heatmap** from your Grafana dashboard.
+    - The **Dark-mode luxury UI** of the real estate platform.
+3.  **A Diagram:** Your architectural "Fortress" (ArgoCD, Vault, Istio, K8s).
 
 ---
 
 ## 🎯 Proposed Contra Services
 
-Based on this project, you can list the following highly requested services on your Contra profile:
+Based on this project, you can list the following high-value services:
 
-1. **Enterprise Full-Stack Web Development ($XX - $XXX / hr)**
-   *   "I will build your SaaS or marketplace platform using cutting-edge technologies like Next.js, Node.js, and SQL."
-2. **DevOps & Cloud Infrastructure Automation ($XX - $XXX / hr)**
-   *   "I will containerize your application, set up GitOps (ArgoCD), CI/CD pipelines (Jenkins), and orchestrate it in Kubernetes."
-3. **Platform Security hardening & Auditing ($XX - $XXX / project)**
-   *   "I will secure your backend infrastructure by integrating HashiCorp Vault, setting up 2FA, and fortifying your APIs against vulnerabilities."
+1.  **Enterprise Full-Stack Web Development ($XX - $XXX / hr)**
+    *   "I build premium, high-performance SaaS platforms using Next.js, Node.js, and SQL Server."
+2.  **DevOps & Service Mesh Orchestration ($XX - $XXX / hr)**
+    *   "I will containerize your apps, set up GitOps (ArgoCD), and implement Istio Service Mesh for elite traffic management and security."
+3.  **Self-Healing Infrastructure & Automation ($XX - $XXX / project)**
+    *   "I will build an indestructible CI/CD pipeline and cloud environment that monitors, secures, and repairs itself automatically."
+4.  **Bank-Grade Security Hardening ($XX - $XXX / project)**
+    *   "I will secure your backend using HashiCorp Vault, mTLS, and zero-trust principles to protect your data and users."

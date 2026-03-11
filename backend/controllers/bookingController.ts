@@ -1,10 +1,22 @@
 import { Request, Response } from 'express';
 import prisma from '../data/database';
 import Stripe from 'stripe';
+let stripe: Stripe;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2026-01-28.clover',
-});
+// 💳 STRIPE INITIALIZATION (Elite Grade)
+const getStripe = () => {
+    if (!stripe) {
+        const key = process.env.STRIPE_SECRET_KEY;
+        if (!key || key.includes('...')) {
+            console.error('❌ SOVEREIGN SECURITY: Stripe Secret Key is missing or invalid (placeholder detected).');
+            throw new Error('STRIPE_CONFIG_ERROR');
+        }
+        stripe = new Stripe(key, {
+            apiVersion: '2024-06-20' as any, // Using stable enterprise version
+        });
+    }
+    return stripe;
+};
 
 // 📅 CREATE BOOKING
 export const createBooking = async (req: Request, res: Response) => {
@@ -81,47 +93,63 @@ export const getPropertyBookings = async (req: Request, res: Response) => {
 export const createCheckoutSession = async (req: Request, res: Response) => {
     try {
         const { propertyId, startDate, endDate, totalPrice, guestId } = req.body;
+        console.log(`💳 Initiating Sovereign Checkout for Asset: ${propertyId}`);
 
         const property = await prisma.property.findUnique({
             where: { id: propertyId }
         });
 
         if (!property) {
+            console.error(`❌ Checkout Failed: Asset ${propertyId} not found.`);
             return res.status(404).json({ success: false, message: "Property not found." });
         }
 
-        // Add 5000 concierge fee (fixed)
-        const totalAmount = (Number(totalPrice) + 5000) * 100; // in cents
+        const totalAmount = (Number(totalPrice) + 5000) * 100;
 
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [
-                {
-                    price_data: {
-                        currency: 'usd',
-                        product_data: {
-                            name: `Booking for ${property.title}`,
-                            description: `Dates: ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`,
+        try {
+            const session = await getStripe().checkout.sessions.create({
+                payment_method_types: ['card'],
+                line_items: [
+                    {
+                        price_data: {
+                            currency: 'usd',
+                            product_data: {
+                                name: `Sovereign Booking: ${property.title}`,
+                                description: `Exclusive Residency: ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}`,
+                            },
+                            unit_amount: totalAmount,
                         },
-                        unit_amount: totalAmount,
+                        quantity: 1,
                     },
-                    quantity: 1,
-                },
-            ],
-            mode: 'payment',
-            success_url: `http://localhost:3000/success?property_id=${propertyId}`,
-            cancel_url: `http://localhost:3000/property/${propertyId}`,
-            metadata: {
-                propertyId,
-                startDate,
-                endDate,
-                guestId: guestId || 'GUEST_USER'
-            }
-        });
+                ],
+                mode: 'payment',
+                success_url: `${req.headers.origin || 'http://localhost:3000'}/success?property_id=${propertyId}`,
+                cancel_url: `${req.headers.origin || 'http://localhost:3000'}/property/${propertyId}`,
+                metadata: {
+                    propertyId,
+                    startDate,
+                    endDate,
+                    guestId: guestId || 'GUEST_USER'
+                }
+            });
 
-        res.status(200).json({ success: true, url: session.url });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Stripe Session Failed" });
+            console.log(`✅ Session Created: ${session.id}`);
+            res.status(200).json({ success: true, url: session.url });
+        } catch (stripeErr: any) {
+            console.error("❌ Stripe Session Creation Failed:", stripeErr.message);
+            if (stripeErr.message.includes("api_key")) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Sovereign Payment Layer is currently in sandbox mode with an invalid key. Please update STRIPE_SECRET_KEY in .env"
+                });
+            }
+            throw stripeErr;
+        }
+    } catch (error: any) {
+        console.error("❌ Checkout Controller Error:", error);
+        res.status(error.message === 'STRIPE_CONFIG_ERROR' ? 400 : 500).json({
+            success: false,
+            message: error.message === 'STRIPE_CONFIG_ERROR' ? "Payment configuration error. Check server logs." : "Checkout Synchronization Failed"
+        });
     }
 };

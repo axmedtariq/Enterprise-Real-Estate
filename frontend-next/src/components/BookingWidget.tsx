@@ -17,21 +17,30 @@ export default function BookingWidget({ property }: { property: any }) {
     const handleBooking = async () => {
         if (!range?.from || !range?.to) return;
         setLoading(true);
+
+        // 📡 Sovereign Link: Dynamic Detection
+        const backendUrl = `http://${window.location.hostname}:5000/api/v1/bookings/checkout`;
+        console.log(`📡 Sovereign Dispatch: Initiating reservation via ${backendUrl}`);
+
         try {
-            const res = await axios.post('http://localhost:5000/api/v1/bookings/checkout', {
+            const res = await axios.post(backendUrl, {
                 propertyId: property.id,
                 startDate: range.from,
                 endDate: range.to,
                 totalPrice,
-                guestId: "GUEST_USER" // In real app, get from Redux auth
+                guestId: "GUEST_USER"
             });
+
             if (res.data.success && res.data.url) {
+                console.log("✅ Sovereign Success: Redirecting to Payment Layer");
                 window.location.href = res.data.url;
             } else {
-                alert("Could not initiate checkout.");
+                alert(`Sovereign System Note: ${res.data.message || "Could not initiate checkout."}`);
             }
-        } catch (err) {
-            alert("Error initiating checkout. Please try again.");
+        } catch (err: any) {
+            console.error("❌ Sovereign Checkout Detail:", err);
+            const errorMsg = err.response?.data?.message || "Error initiating checkout. Please try again.";
+            alert(`Sovereign Payment Error: ${errorMsg}`);
         } finally {
             setLoading(false);
         }

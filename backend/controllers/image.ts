@@ -29,7 +29,7 @@ export const uploadPropertyImages = async (req: UploadPropertyImagesRequest, res
 
     // 💎 ELITE PARALLEL UPLOAD: Uploads all images simultaneously
     const uploadPromises: Promise<cloudinary.UploadApiResponse>[] = imagesArray.map(
-      (image) =>
+      (image: string) =>
         cloudinaryV2.uploader.upload(image, {
           folder: "sovereign_properties",
           resource_type: "image",
@@ -49,7 +49,7 @@ export const uploadPropertyImages = async (req: UploadPropertyImagesRequest, res
 
     const results = await Promise.all(uploadPromises);
 
-    const imagesLinks: UploadedImage[] = results.map((result) => ({
+    const imagesLinks: UploadedImage[] = results.map((result: any) => ({
       public_id: result.public_id,
       url: result.secure_url,
     }));

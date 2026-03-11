@@ -36,7 +36,7 @@ export const getSuperAdminStats = async (req: Request, res: Response) => {
         });
 
         // Format for frontend
-        const formattedAgencies = allAgencies.map(agency => ({
+        const formattedAgencies = allAgencies.map((agency: any) => ({
             id: agency.id,
             name: agency.name,
             commissionRate: agency.commissionRate,

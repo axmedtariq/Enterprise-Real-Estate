@@ -3,14 +3,11 @@ import Redis from 'ioredis';
 const REDIS_URL = process.env.REDIS_URL || 'redis://redis:6379';
 
 const redis = new Redis(REDIS_URL, {
-    maxRetriesPerRequest: null,
-    enableReadyCheck: true,
-    reconnectOnError: (err: Error) => {
-        const targetError = 'READONLY';
-        if (err.message.includes(targetError)) {
-            return true;
-        }
-        return false;
+    maxRetriesPerRequest: 3, // Prevent infinite spam if Redis is down
+    enableReadyCheck: false,
+    retryStrategy: (times) => {
+        if (times > 3) return null; // Stop retrying after 3 attempts
+        return Math.min(times * 50, 2000);
     }
 });
 
