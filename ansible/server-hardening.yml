@@ -1,0 +1,52 @@
+# 🛡️ SOVEREIGN ANSIBLE HARDENING (OS LAYER)
+# Target: Ubuntu/Debian Production Servers
+
+- name: 🔒 OS ELITE HARDENING
+  hosts: production
+  become: yes
+  vars:
+    ssh_port: 22
+    allowed_ips: ["1.2.3.4/32"] # Replace with corporate/dev IP
+
+  tasks:
+    # 1. 📦 PACKAGE HARDENING
+    - name: 🛡️ Update APT repositories
+      apt: update_cache=yes upgrade=dist
+
+    - name: 🛡️ Install Security Tools
+      apt: name={{ item }} state=latest
+      loop: [fail2ban, ufw, auditd, libpam-pwquality]
+
+    # 2. 🔌 FIREWALL HARDENING (ZERO TRUST)
+    - name: 🛡️ Deny all incoming traffic
+      ufw: state=enabled policy=deny direction=incoming
+
+    - name: 🛡️ Allow SSH (Restricted)
+      ufw: rule=allow port={{ ssh_port }} proto=tcp src={{ item }}
+      loop: "{{ allowed_ips }}"
+
+    - name: 🛡️ Allow HTTP/HTTPS
+      ufw: rule=allow port={{ item }} proto=tcp
+      loop: [80, 443, 3000, 5000]
+
+    # 3. 🗝️ SSH HARDENING
+    - name: 🛡️ Disable Root Login and Password Auth
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: "^PermitRootLogin", line: "PermitRootLogin no" }
+        - { regexp: "^PasswordAuthentication", line: "PasswordAuthentication no" }
+        - { regexp: "^PubkeyAuthentication", line: "PubkeyAuthentication yes" }
+      notify: Restart SSH
+
+    # 4. 💽 FILESYSTEM HARDENING
+    - name: 🛡️ Secure shared memory
+      lineinfile:
+        path: /etc/fstab
+        line: "tmpfs /run/shm tmpfs defaults,noexec,nosuid 0 0"
+
+  handlers:
+    - name: Restart SSH
+      service: name=ssh state=restarted

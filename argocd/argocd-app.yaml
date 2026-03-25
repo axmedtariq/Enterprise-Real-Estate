@@ -1,0 +1,53 @@
+# 🛡️ SOVEREIGN ARGOCD OVERLORD
+# Continuous Delivery (CD) - Manifest for Elite Deployment Automation
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sovereign-frontend-engine
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/your-org/Real-Estate-Enterprise.git'
+    targetRevision: HEAD
+    path: k8s
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: sovereign-production
+
+  # ⚙️ AUTOMATED SYNC POLICY
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - Validate=true
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+---
+# ⚙️ BACKEND ENGINE APPLICATION
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sovereign-backend-engine
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/your-org/Real-Estate-Enterprise.git'
+    targetRevision: HEAD
+    path: k8s
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: sovereign-production
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

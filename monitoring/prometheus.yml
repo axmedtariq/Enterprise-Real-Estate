@@ -1,0 +1,35 @@
+# 🛡️ SOVEREIGN ELITE MONITORING
+# Prometheus Secure Scraping configuration
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# 🚨 ALERTING (Ready for Slack)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            # - alertmanager:9093
+
+# 📊 SCRAPE JOBS
+scrape_configs:
+  # 1. Self Monitor
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # 2. Node.js Backend
+  - job_name: "sovereign-backend"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["backend:5000"]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "sovereign-production-engine"
+
+  # 3. Docker Statistics (cAdvisor)
+  - job_name: "docker-stats"
+    static_configs:
+      - targets: ["cadvisor:8081"]

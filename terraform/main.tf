@@ -1,117 +1,87 @@
-provider "aws" {
-  region = "us-east-1"
-}
+# 🛡️ SOVEREIGN CLOUD OVERLORD (AWS)
+# Modular Terraform for Elite Infrastructure
 
-variable "project_name" {
-  default = "sovereign-real-estate"
-}
+# 1. 🌐 SECURE VPC
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.0.0"
 
-resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
+  name = "sovereign-vpc"
+  cidr = "10.0.0.0/16"
+
+  azs             = ["us-east-1a", "us-east-1b", "us-east-1c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_nat_gateway = true
+  single_nat_gateway = true
   enable_dns_hostnames = true
 
-  tags = {
-    Name = "${var.project_name}-vpc"
+  public_subnet_tags = {
+    "kubernetes.io/cluster/sovereign-eks" = "shared"
+    "kubernetes.io/role/elb"              = "1"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/sovereign-eks" = "shared"
+    "kubernetes.io/role/internal-elb"     = "1"
   }
 }
 
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = "us-east-1a"
+# 2. 🎡 EKS CLUSTER (Hardened Control Plane)
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "19.15.0"
 
-  tags = {
-    Name = "${var.project_name}-subnet-public"
+  cluster_name    = "sovereign-eks"
+  cluster_version = "1.27"
+
+  vpc_id                         = module.vpc.vpc_id
+  subnet_ids                     = module.vpc.private_subnets
+  cluster_endpoint_public_access = true # Can be hardened to false with VPN
+
+  eks_managed_node_groups = {
+    sovereign_nodes = {
+      min_size     = 2
+      max_size     = 5
+      desired_size = 3
+
+      instance_types = ["t3.large"]
+      capacity_type  = "ON_DEMAND"
+      
+      # 🛡️ NODE HARDENING
+      key_name = "sovereign-key"
+      block_device_mappings = {
+        xvda = {
+          device_name = "/dev/xvda"
+          ebs = {
+            volume_size           = 50
+            volume_type           = "gp3"
+            iops                  = 3000
+            throughput            = 125
+            encrypted             = true
+            delete_on_termination = true
+          }
+        }
+      }
+    }
+  }
+
+  node_security_group_additional_rules = {
+    ingress_self_all = {
+      description = "Node to Node all ports/protocols"
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      type        = "ingress"
+      self        = true
+    }
   }
 }
 
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "${var.project_name}-igw"
-  }
-}
-
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.gw.id
-  }
-
-  tags = {
-    Name = "${var.project_name}-rt"
-  }
-}
-
-resource "aws_route_table_association" "public" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_security_group" "web_sg" {
-  name        = "${var.project_name}-sg"
-  description = "Allow inbound traffic for web and ssh"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Frontend
-  }
-
-  ingress {
-    from_port   = 5000
-    to_port     = 5000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Backend
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_instance" "web" {
-  ami                    = "ami-0c7217cdde317cfec" # Ubuntu 20.04 LTS (us-east-1) - Update as needed
-  instance_type          = "t3.medium"
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.web_sg.id]
-  key_name               = "sovereign-key" # Expects existing key pair
-
-  tags = {
-    Name = "${var.project_name}-server"
-  }
-}
-
-output "public_ip" {
-  value = aws_instance.web.public_ip
+# 3. 🔐 KMS KEY (ENCRYPTION AT REST)
+resource "aws_kms_key" "sovereign_key" {
+  description             = "KMS Key for Sovereign Storage Encryption"
+  deletion_window_in_days = 30
+  enable_key_rotation     = true
 }

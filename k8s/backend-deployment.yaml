@@ -1,0 +1,88 @@
+# 🛡️ SOVEREIGN K8S OVERLORD
+# 🧩 NAMESPACE ISOLATION
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sovereign-production
+  labels:
+    istio-injection: enabled # Enable Istio mTLS by default
+---
+# ⚙️ BACKEND ENGINE (API)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sovereign-backend
+  namespace: sovereign-production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      # 🛡️ POD HARDENING
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      
+      containers:
+      - name: backend
+        image: your-registry/sovereign-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        
+        # 🔗 SECURE CONFIGURATION
+        envFrom:
+        - secretRef:
+            name: sovereign-secrets # Managed via Vault Injector
+        
+        # 📉 RESOURCE QUOTAS (Elite Performance)
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+        
+        # 🧪 HEALTH PROBES (Military Grade)
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        
+        # 🛡️ CONTAINER HARDENING
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+---
+# 🔌 BACKEND SERVICE (mTLS)
+apiVersion: v1
+kind: Service
+metadata:
+  name: sovereign-backend
+  namespace: sovereign-production
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP
