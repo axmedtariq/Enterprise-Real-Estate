@@ -8,7 +8,7 @@ COPY . .
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN apk add --no-cache tini && \
+RUN apk add --no-cache tini libc6-compat && \
     addgroup -g 1001 -S sovereign && \
     adduser -S sovereign -u 1001 -G sovereign
 COPY --from=builder /app/node_modules ./node_modules

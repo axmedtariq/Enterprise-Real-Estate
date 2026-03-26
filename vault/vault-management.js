@@ -1,7 +1,9 @@
 /**
- * 🛡️ SOVEREIGN VAULT SECRETS OVERLORD
- * Elite provisioning script for Enterprise Secrets Management
+ * 🛡️ SOVEREIGN VAULT SECRETS OVERLORD: ENTERPRISE EDITION
+ * Elite provisioning script for Production Secrets Management using HCL Policies.
  */
+const fs = require('fs');
+const path = require('path');
 const vault = require('node-vault')({
   apiVersion: 'v1',
   endpoint: process.env.VAULT_ADDR || 'http://127.0.0.1:8200',
@@ -10,10 +12,9 @@ const vault = require('node-vault')({
 
 async function provisionSovereignVault() {
   try {
-    console.log("🛡️ Initializing Sovereign Secret Overlord...");
+    console.log("🛡️ Initializing Enterprise Vault Overlord...");
 
     // 1. 📂 MOUNT KV ENGINE (V2)
-    await vault.mounts();
     try {
       await vault.mount({
         mount_point: 'sovereign',
@@ -21,48 +22,73 @@ async function provisionSovereignVault() {
         options: { version: '2' }
       });
       console.log("✅ Mounted 'sovereign' KV Engine.");
-    } catch (e) { console.log("ℹ️ Engine 'sovereign' already exists."); }
+    } catch (e) { 
+      if (e.message.includes('already exists')) {
+        console.log("ℹ️ Engine 'sovereign' already exists."); 
+      } else {
+        console.error("❌ Mounting Error:", e.message);
+        throw e;
+      }
+    }
 
-    // 2. 📝 DEFINE POLICIES (Elite Permissions)
-    const policy = `
-      path "sovereign/data/config/*" { capabilities = ["read", "list"] }
-      path "sovereign/data/database/*" { capabilities = ["read", "list"] }
-      path "sovereign/data/tokens/*" { capabilities = ["read", "list", "create", "update"] }
-      
-      # 🛡️ SECURITY AUDIT CAPABILITY
-      path "sys/internal/ui/mounts" { capabilities = ["read"] }
-      path "sys/auth" { capabilities = ["read", "list"] }
-    `;
-    await vault.addPolicy({ name: 'sovereign-app-policy', rules: policy });
-    console.log("✅ Policy 'sovereign-app-policy' Created.");
+    // 2. 📝 LOAD & APPLY HCL POLICIES
+    const appPolicyHcl = fs.readFileSync(path.join(__dirname, 'sovereign-app-policy.hcl'), 'utf8');
+    const adminPolicyHcl = fs.readFileSync(path.join(__dirname, 'sovereign-admin-policy.hcl'), 'utf8');
+    
+    await vault.addPolicy({ name: 'sovereign-app-policy', rules: appPolicyHcl });
+    await vault.addPolicy({ name: 'sovereign-admin-policy', rules: adminPolicyHcl });
+    console.log("✅ HCL Policies (App & Admin) Synchronized.");
 
-    // 3. 👤 CREATE APP USER (User/Pass Auth)
+    // 3. 👤 CONFIGURE AUTH METHODS
+    // 3a. AppRole (Machine-to-Machine)
     try {
-      await vault.enableAuth({ mount_point: 'userpass', type: 'userpass' });
+      await vault.enableAuth({ mount_point: 'approle', type: 'approle' });
+      console.log("✅ Enabled AppRole Auth.");
     } catch (e) {}
 
-    await vault.write('auth/userpass/users/app-service', {
-      password: 'sovereign-app-secret-2026',
-      policies: 'sovereign-app-policy'
+    // 3b. UserPass (Human Admin)
+    try {
+      await vault.enableAuth({ mount_point: 'userpass', type: 'userpass' });
+      console.log("✅ Enabled UserPass Auth Method.");
+    } catch (e) {}
+
+    // Create Human Admin: Tariq
+    await vault.write('auth/userpass/users/Tariq', {
+      password: 'Somalilander123@123',
+      policies: 'sovereign-admin-policy'
     });
-    console.log("✅ App Service User created in UserPass.");
+    console.log("✅ Human Operator 'Tariq' Provisioned (Policy: sovereign-admin-policy).");
+
+    // Create AppRole Linked to Policy
+    await vault.write('auth/approle/role/sovereign-auth-engine', {
+      token_policies: 'sovereign-app-policy',
+      token_ttl: '24h',
+      token_max_ttl: '72h',
+      bind_secret_id: true // Require SecretID for login (Military Grade)
+    });
+    console.log("✅ AppRole 'sovereign-auth-engine' Configured.");
+
+    // Retrieve RoleID for the app
+    const roleId = await vault.read('auth/approle/role/sovereign-auth-engine/role-id');
+    console.log(`🔗 APP_ROLE_ID: ${roleId.data.role_id}`);
 
     // 4. 💎 SEED INITIAL SECRETS
     await vault.write('sovereign/data/config/supabase', {
       data: {
         URL: "https://basdbtwzdunazynpzett.supabase.co",
-        ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        ANON_KEY: "PROD_SECRET_REDACTED",
+        JWT_SECRET: "SOVEREIGN_V1_MASTER_KEY"
       }
     });
 
     await vault.write('sovereign/data/database/postgres', {
       data: {
-        DATABASE_URL: "postgresql://postgres...",
-        DIRECT_URL: "postgresql://..."
+        DATABASE_URL: "postgresql://postgres:REDACTED@host:5432/dbname",
+        DIRECT_URL: "postgresql://postgres:REDACTED@host:5432/dbname"
       }
     });
 
-    console.log("🔒 VAULT OVERLORD SYSTEM CONFIGURED SUCCESSFULLY.");
+    console.log("🔒 VAULT OVERLORD SYSTEM CONFIGURED SUCCESSFULLY (ENTERPRISE GRADE).");
   } catch (error) {
     console.error("❌ VAULT ERROR:", error.message);
   }

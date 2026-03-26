@@ -31,7 +31,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (savedToken && savedUser) {
             setToken(savedToken);
-            setUser(JSON.parse(savedUser));
+            try {
+                setUser(JSON.parse(savedUser));
+            } catch (e) {
+                console.error("❌ Auth Recovery Failed: Corrupted session data.");
+                localStorage.removeItem('sovereign_user');
+            }
             
             // Set global Authorization header for Axios
             axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;

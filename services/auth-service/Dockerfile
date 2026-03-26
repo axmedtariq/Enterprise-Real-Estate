@@ -30,8 +30,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=5000
 
-# 2. Hardening: Install tini for signal handling and remove OS vulnerabilities
-RUN apk add --no-cache tini && \
+# 2. Hardening: Install tini/libc6 and user configuration
+RUN apk add --no-cache tini libc6-compat && \
     addgroup -g 1001 -S sovereign && \
     adduser -S sovereign -u 1001 -G sovereign
 

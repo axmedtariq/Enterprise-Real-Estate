@@ -13,11 +13,7 @@ const envConfig = dotenv.parse(fs.readFileSync(envPath));
 
 const vaultOptions = {
     apiVersion: 'v1',
-    endpoint: envConfig.VAULT_ADDR || 'http://127.0.0.1:8200',
-    requestOptions: {
-        strictSSL: false,
-        rejectUnauthorized: false
-    }
+    endpoint: envConfig.VAULT_ADDR || 'http://127.0.0.1:8200'
 };
 
 const client = vault(vaultOptions);

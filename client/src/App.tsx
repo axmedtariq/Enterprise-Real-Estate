@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { Home, User, Settings, CheckCircle, AlertTriangle, Key, LogOut } from 'lucide-react';
-import axios from 'axios';
-import { supabase } from './lib/supabase';
+import { Settings, Key, LogOut } from 'lucide-react';
 
 function Dashboard() {
   const { user, logout } = useAuth();
-  const [dbStatus, setDbStatus] = useState<'active' | 'error'>('active');
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">

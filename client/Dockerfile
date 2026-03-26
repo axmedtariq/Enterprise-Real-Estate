@@ -15,7 +15,7 @@ COPY . .
 RUN npm run build
 
 # Phase 2: Production Hardened Serving
-FROM nginx:1.25-alpine AS runner
+FROM nginx:alpine AS runner
 
 # 1. OS Hardening: Install security dependencies and create non-root user
 RUN apk add --no-cache curl tzdata && \

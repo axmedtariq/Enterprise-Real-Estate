@@ -1,0 +1,11 @@
+{
+  "name": "sovereign-admin-root",
+  "version": "1.0.0",
+  "description": "Administrative scripts for Sovereign Real Estate Enterprise",
+  "scripts": {
+    "vault:sync": "node vault/vault-management.js"
+  },
+  "dependencies": {
+    "node-vault": "^0.10.10"
+  }
+}

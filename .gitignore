@@ -73,3 +73,6 @@ PROJECT_GUIDE.md
 
 # ArgoCD Secrets
 argocd-patch*
+
+# Private Enterprise Metadata
+SOVEREIGN_ACCESS_MANIFEST.md

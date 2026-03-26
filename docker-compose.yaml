@@ -61,7 +61,7 @@ services:
       - no-new-privileges:true
     restart: unless-stopped
 
-  # 5. 💳 BOOKING SERVICE
+  # 💳 BOOKING SERVICE
   booking-service:
     build:
       context: ./services/booking-service
@@ -74,6 +74,21 @@ services:
       - PORT=5003
     security_opt:
       - no-new-privileges:true
+    restart: unless-stopped
+
+  # 🔐 SECRETS VAULT (Enterprise Hardened)
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: sovereign_vault
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=sovereign-root-token # Matches our management script
+      - VAULT_ADDR=http://127.0.0.1:8200
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - sovereign_svc
     restart: unless-stopped
 
 networks:
