@@ -46,12 +46,13 @@ router.get('/property/:id', searchLimiter, cache(600), getPropertyDetails);
 import { protect, authorize } from '../middlewares/authMiddleware';
 
 // Admin Routes (To be protected with middleware)
+// Admin Routes
 router.post('/admin/property/new', protect, authorize('ADMIN'), createProperty);
 
-// Booking Routes
+// Booking Routes (Protected)
 import { createBooking, getPropertyBookings, createCheckoutSession } from '../controllers/bookingController';
-router.post('/bookings', createBooking);
-router.post('/bookings/checkout', createCheckoutSession);
-router.get('/bookings/:propertyId', getPropertyBookings);
+router.post('/bookings', protect, createBooking);
+router.post('/bookings/checkout', protect, createCheckoutSession);
+router.get('/bookings/:propertyId', protect, getPropertyBookings);
 
 export default router;

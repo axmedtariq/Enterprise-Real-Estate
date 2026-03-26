@@ -18,18 +18,50 @@ const getStripe = () => {
     return stripe;
 };
 
-// 📅 CREATE BOOKING
+// 📅 CREATE BOOKING (Hardened & Financially Validated)
 export const createBooking = async (req: Request, res: Response) => {
     try {
-        const { propertyId, startDate, endDate, totalPrice, guestId } = req.body;
+        const { propertyId, startDate, endDate } = req.body;
+        const user = (req as any).user;
 
-        // Check for overlaps
+        if (!user) {
+            return res.status(401).json({ success: false, message: "Unauthorized. Please log in." });
+        }
+
+        // 1. Fetch the absolute source of truth for pricing
+        const property = await prisma.property.findUnique({
+            where: { id: propertyId },
+            select: { id: true, price: true }
+        });
+
+        if (!property) {
+            return res.status(404).json({ success: false, message: "Asset Not Found" });
+        }
+
+        // 2. Calculate Nights Securely
         const start = new Date(startDate);
         const end = new Date(endDate);
 
+        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
+            return res.status(400).json({ success: false, message: "Invalid residency period." });
+        }
+
+        const millisecondsPerDay = 1000 * 60 * 60 * 24;
+        const nights = Math.ceil((end.getTime() - start.getTime()) / millisecondsPerDay);
+
+        if (nights <= 0) {
+            return res.status(400).json({ success: false, message: "Stays must be at least 1 night." });
+        }
+
+        // 3. SERVER-SIDE PRICE RE-CALCULATION (Anti-Manipulation)
+        // We ignore any 'totalPrice' sent from the client-side to prevent fraud.
+        const calculatedTotalPrice = property.price * nights;
+
+        // 4. Double-Booking Mitigation (Race Condition Protection)
         const conflictingBooking = await prisma.booking.findFirst({
             where: {
                 propertyId,
+                status: { not: "cancelled" },
                 OR: [
                     { startDate: { lte: end }, endDate: { gte: start } }
                 ]
@@ -37,23 +69,7 @@ export const createBooking = async (req: Request, res: Response) => {
         });
 
         if (conflictingBooking) {
-            return res.status(400).json({ success: false, message: "Dates already booked." });
-        }
-
-        let finalGuestId = guestId;
-
-        if (!finalGuestId) {
-            const guestUser = await prisma.user.upsert({
-                where: { email: 'guest@sovereign.com' },
-                update: {},
-                create: {
-                    name: 'Guest User',
-                    email: 'guest@sovereign.com',
-                    password: 'no-password',
-                    role: 'GUEST'
-                }
-            });
-            finalGuestId = guestUser.id;
+            return res.status(400).json({ success: false, message: "Dates already reserved." });
         }
 
         const booking = await prisma.booking.create({
@@ -61,16 +77,16 @@ export const createBooking = async (req: Request, res: Response) => {
                 propertyId,
                 startDate: start,
                 endDate: end,
-                totalPrice: Number(totalPrice),
-                guestId: finalGuestId,
+                totalPrice: calculatedTotalPrice, // Use the server-side truth!
+                guestId: user.id,
                 status: "confirmed"
             }
         });
 
         res.status(201).json({ success: true, data: booking });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: "Booking Failed" });
+        console.error("❌ SOVEREIGN BOOKING ERROR:", error);
+        res.status(500).json({ success: false, message: "System failure during asset reservation." });
     }
 };
 

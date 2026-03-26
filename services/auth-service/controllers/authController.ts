@@ -1,17 +1,24 @@
 import { Request, Response } from 'express';
 import prisma from '../data/database';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import speakeasy from 'speakeasy';
 import qrcode from 'qrcode';
 import { sendEmail } from '../utils/sendEmail'; // Need to create this
 import crypto from 'crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// Elite JWT Security: User-specific secret generation
-const getDynamicSecret = (userRevision: number) => {
-    return `${JWT_SECRET}-${userRevision}`;
+// Elite Security: Token Signing
+const signToken = (user: any) => {
+    if (!JWT_SECRET || JWT_SECRET === 'your_super_secret_jwt_key_here') {
+        throw new Error("❌ SYSTEM_SECURITY_MISCONFIGURED: JWT_SECRET missing!");
+    }
+    return jwt.sign(
+        { id: user.id, role: user.role, rev: user.jwtSecretRevision },
+        JWT_SECRET,
+        { expiresIn: '1d' }
+    );
 };
 
 // --- AUTH CONTROLLER ---
@@ -41,15 +48,20 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             }
         });
 
-        const token = jwt.sign(
-            { id: user.id, role: user.role, rev: user.jwtSecretRevision },
-            getDynamicSecret(user.jwtSecretRevision),
-            { expiresIn: '1d' }
-        );
+        const token = signToken(user);
+
+        // 🛡️ ELITE SESSION STORAGE: HTTPOnly Cookies (Anti-XSS)
+        res.cookie('sovereign_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Use Secure in production
+            sameSite: 'strict',
+            maxAge: 86400000 // 1 day
+        });
 
         res.status(201).json({
+            success: true,
             message: 'User registered successfully',
-            token,
+            token, // Keep sending token in body for legacy frontend support, but move to cookie gradually
             user: { id: user.id, name: user.name, email: user.email, role: user.role }
         });
     } catch (error) {
@@ -128,11 +140,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             data: { failedLoginAttempts: 0, lockUntil: null }
         });
 
-        const token = jwt.sign(
-            { id: user.id, role: user.role, rev: user.jwtSecretRevision },
-            getDynamicSecret(user.jwtSecretRevision),
-            { expiresIn: '1d' }
-        );
+        const token = signToken(user);
+
+        // 🛡️ ELITE SESSION STORAGE: HTTPOnly Cookies (Anti-XSS)
+        res.cookie('sovereign_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 86400000 // 1 day
+        });
 
         res.json({
             message: 'Login successful',

@@ -40,16 +40,19 @@ async function seed() {
         else agencies.push(data[0]);
     }
 
-    // 2. Create Users
-    console.log('Creating users...');
+    // 2. Create Users (Secured with Bcrypt)
+    console.log('🛡️ Creating users (Hashed)...');
+    const bcrypt = require('bcrypt'); // Make sure bcrypt is in dependencies
     const users = [];
     for (let i = 0; i < 10; i++) {
         const role = faker.helpers.arrayElement(['USER', 'USER', 'AGENT']);
+        const hashedPassword = await bcrypt.hash('password123', 12);
+        
         const { data, error } = await supabase.from('User').insert({
             id: faker.string.uuid(),
             name: faker.person.fullName(),
             email: faker.internet.email(),
-            password: 'password123',
+            password: hashedPassword,
             role: role,
             agencyId: role === 'AGENT' ? faker.helpers.arrayElement(agencies).id : null,
             updatedAt: new Date(),

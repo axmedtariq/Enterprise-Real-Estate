@@ -26,11 +26,14 @@ io.on("connection", (socket: Socket) => {
 });
 
 import { sendSlackNotification } from './utils/sendSlack';
+import { loadSecrets } from './utils/vault_loader';
 
 const PORT = process.env.PORT || 5001;
 
 const startServer = async () => {
-  // 🔐 BOOT SEQUENCE
+  // 🔐 BOOT SEQUENCE (Elite Grade)
+  console.log('🛡️ Initializing Sovereign Boot Sequence...');
+  await loadSecrets();
   await connectDatabase();
 
   server.listen(PORT, () => {

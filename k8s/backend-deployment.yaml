@@ -50,17 +50,17 @@ spec:
             cpu: "1"
             memory: "1Gi"
         
-        # 🧪 HEALTH PROBES (Military Grade)
+        # 🧪 HEALTH PROBES (Enterprise Grade)
         livenessProbe:
           httpGet:
             path: /health
-            port: 5000
+            port: 5001
           initialDelaySeconds: 15
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 5000
+            port: 5001
           initialDelaySeconds: 5
           periodSeconds: 5
         

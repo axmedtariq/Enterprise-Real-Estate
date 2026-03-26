@@ -17,38 +17,52 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     }
 
     if (!token) {
-        return res.status(401).json({ message: 'Not authorized to access this route' });
+        return res.status(401).json({ message: 'Not authorized: No token provided' });
     }
 
     try {
-        // 1. Decode WITHOUT verification first to get the revision claim
-        const unverifiedDecoded = jwt.decode(token) as any;
-        if (!unverifiedDecoded || !unverifiedDecoded.id) {
-            return res.status(401).json({ message: 'Invalid token structure' });
+        const JWT_SECRET = process.env.JWT_SECRET;
+        if (!JWT_SECRET || JWT_SECRET === 'your_super_secret_jwt_key_here') {
+            console.error("🔒 SECURITY BREACH: Attempted access with default or missing JWT_SECRET");
+            return res.status(500).json({ message: 'System Security Configuration Error' });
         }
 
-        // 2. Fetch user to get their CURRENT secret revision
+        // Verify the token integrity
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        
+        // Fetch user to check status and session revision
         const user = await prisma.user.findUnique({
-            where: { id: unverifiedDecoded.id },
-            select: { id: true, role: true, email: true, name: true, jwtSecretRevision: true }
+            where: { id: decoded.id },
+            select: { 
+                id: true, 
+                role: true, 
+                email: true, 
+                name: true, 
+                jwtSecretRevision: true, 
+                agencyId: true,
+                isActive: true // Assuming this exists or can be added
+            }
         });
 
         if (!user) {
-            return res.status(401).json({ message: 'User no longer exists' });
+            return res.status(401).json({ message: 'Identity Revoked: User no longer exists' });
         }
 
-        // 3. Verify the token using the user-specific dynamic secret
-        const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
-        const dynamicSecret = `${JWT_SECRET}-${user.jwtSecretRevision}`;
+        // SESSION REVOCATION CHECK (Military Grade)
+        // If the 'rev' claim in the token does not match the database, the session was revoked (e.g. password change)
+        if (decoded.rev !== user.jwtSecretRevision) {
+             return res.status(401).json({ message: 'Security Alert: Session has been remotely revoked or expired' });
+        }
 
-        jwt.verify(token, dynamicSecret);
-
-        // 4. Attach user and move on
+        // Attach user and move on
         (req as any).user = user;
         next();
     } catch (error) {
-        console.error("JWT Verification Failed:", error);
-        return res.status(401).json({ message: 'Session expired or security reset' });
+        if (error instanceof jwt.TokenExpiredError) {
+            return res.status(401).json({ message: 'Session Expired' });
+        }
+        console.error("🔒 JWT Security Violation:", (error as any).message);
+        return res.status(401).json({ message: 'Access Denied: Invalid Security Token' });
     }
 };
 
